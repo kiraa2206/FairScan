@@ -6,7 +6,7 @@ explains, and fixes hidden bias in datasets used for
 automated decisions in HR, Finance, and Healthcare.
 
 ## 🔗 Live Demo
-FairScan is deployed on GitHub Pages (Microsoft Azure infrastructure) at (https://fairscan-2026.web.app/)
+[Click here to view FairScan](https://fairscan-2026.web.app/)
 
 ## 📋 Features
 - ✅ CSV upload with real bias calculation
