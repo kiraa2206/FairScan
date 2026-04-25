@@ -6,7 +6,7 @@ explains, and fixes hidden bias in datasets used for
 automated decisions in HR, Finance, and Healthcare.
 
 ## 🔗 Live Demo
-[Click here to view FairScan](https://kiraa2206.github.io/fairscan)
+[Click here to view FairScan](https://kiraa2206.github.io/FairScan)
 
 ## 📋 Features
 - ✅ CSV upload with real bias calculation
