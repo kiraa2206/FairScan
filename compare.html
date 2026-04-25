@@ -1,0 +1,765 @@
+<!--compare.html-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FairScan — Before vs After</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #0e0e0f;
+            --bg2: #141416;
+            --surface: #1a1a1d;
+            --surface2: #202025;
+            --border: rgba(255, 255, 255, .07);
+            --border2: rgba(255, 255, 255, .13);
+            --electric: #e8ff47;
+            --coral: #ff5c5c;
+            --sky: #5ce4ff;
+            --mint: #4fffb0;
+            --lavender: #c084fc;
+            --text: #f0ede8;
+            --text2: #9d9a94;
+            --text3: #5a5754
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            cursor: none
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 1;
+            opacity: .6
+        }
+
+        .page {
+            position: relative;
+            z-index: 2
+        }
+
+        .cursor-dot {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            background: var(--electric);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 14px var(--electric)
+        }
+
+        .cursor-ring {
+            position: fixed;
+            width: 34px;
+            height: 34px;
+            border: 1.5px solid rgba(232, 255, 71, .35);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transform: translate(-50%, -50%)
+        }
+
+        nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.8rem 4rem;
+            background: rgba(14, 14, 15, .88);
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100
+        }
+
+        .logo-wrap {
+            display: flex;
+            align-items: baseline;
+            gap: .4rem;
+            text-decoration: none
+        }
+
+        .logo-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.55rem;
+            font-weight: 900;
+            font-style: italic;
+            color: var(--text);
+            letter-spacing: -.02em
+        }
+
+        .logo-badge {
+            font-family: 'DM Mono', monospace;
+            font-size: .72rem;
+            color: var(--electric);
+            background: rgba(232, 255, 71, .08);
+            border: 1px solid rgba(232, 255, 71, .22);
+            padding: .2rem .5rem;
+            letter-spacing: .1em
+        }
+
+        .breadcrumb {
+            font-family: 'DM Mono', monospace;
+            font-size: .72rem;
+            color: var(--text3);
+            display: flex;
+            align-items: center;
+            gap: .6rem
+        }
+
+        .breadcrumb .sep {
+            color: var(--electric)
+        }
+
+        .breadcrumb .cur {
+            color: var(--text2)
+        }
+
+        .nav-back {
+            font-family: 'DM Mono', monospace;
+            font-size: .72rem;
+            color: var(--text3);
+            text-decoration: none;
+            border: 1px solid var(--border2);
+            padding: .4rem .9rem;
+            transition: color .2s, border-color .2s
+        }
+
+        .nav-back:hover {
+            color: var(--electric);
+            border-color: rgba(232, 255, 71, .4)
+        }
+
+        .main {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 4rem 2rem 7rem
+        }
+
+        .page-header {
+            margin-bottom: 3rem
+        }
+
+        .ph-meta {
+            display: flex;
+            align-items: center;
+            gap: .8rem;
+            font-family: 'DM Mono', monospace;
+            font-size: .7rem;
+            color: var(--text3);
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            margin-bottom: 1rem
+        }
+
+        .ph-num {
+            color: var(--electric);
+            border: 1px solid rgba(232, 255, 71, .28);
+            padding: .2rem .5rem
+        }
+
+        .ph-h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 900;
+            letter-spacing: -.03em;
+            color: var(--text);
+            line-height: 1.05;
+            margin-bottom: .6rem
+        }
+
+        .ph-h1 em {
+            font-style: italic;
+            color: var(--electric)
+        }
+
+        .ph-sub {
+            font-size: .95rem;
+            color: var(--text3);
+            font-family: 'DM Mono', monospace;
+            letter-spacing: .04em
+        }
+
+        .no-fix-msg {
+            text-align: center;
+            padding: 4rem 2rem;
+            border: 1.5px dashed var(--border2);
+            background: var(--surface);
+            margin-bottom: 2rem
+        }
+
+        .no-fix-icon {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 1rem;
+            opacity: .5
+        }
+
+        .no-fix-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            font-style: italic;
+            color: var(--text);
+            margin-bottom: .6rem
+        }
+
+        .no-fix-sub {
+            font-size: .9rem;
+            color: var(--text3);
+            margin-bottom: 1.5rem
+        }
+
+        .go-fix {
+            display: inline-block;
+            border: 1.5px solid var(--electric);
+            color: var(--electric);
+            font-family: 'DM Mono', monospace;
+            font-size: .78rem;
+            letter-spacing: .12em;
+            padding: .8rem 2rem;
+            text-decoration: none;
+            transition: background .2s, box-shadow .2s
+        }
+
+        .go-fix:hover {
+            background: rgba(232, 255, 71, .09);
+            box-shadow: 0 0 22px rgba(232, 255, 71, .25)
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            margin-bottom: 2rem
+        }
+
+        .stat-cell {
+            background: var(--surface);
+            padding: 2rem 1.8rem;
+            text-align: center
+        }
+
+        .stat-label {
+            font-family: 'DM Mono', monospace;
+            font-size: .68rem;
+            color: var(--text3);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-bottom: .8rem;
+            display: block
+        }
+
+        .stat-val {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.8rem;
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -.03em
+        }
+
+        .stat-val.before {
+            color: var(--coral)
+        }
+
+        .stat-val.after {
+            color: var(--mint)
+        }
+
+        .stat-val.improvement {
+            color: var(--electric)
+        }
+
+        .stat-sub {
+            font-family: 'DM Mono', monospace;
+            font-size: .65rem;
+            color: var(--text3);
+            letter-spacing: .08em;
+            margin-top: .5rem
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            padding: 2rem;
+            margin-bottom: 2rem
+        }
+
+        .chart-title {
+            font-family: 'DM Mono', monospace;
+            font-size: .75rem;
+            color: var(--text2);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: .6rem
+        }
+
+        .chart-title::before {
+            content: '';
+            display: block;
+            width: 14px;
+            height: 1px;
+            background: var(--electric);
+            box-shadow: 0 0 6px var(--electric)
+        }
+
+        .grade-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+            background: var(--border);
+            margin-bottom: 2rem
+        }
+
+        .grade-cell {
+            background: var(--surface);
+            padding: 2rem;
+            text-align: center
+        }
+
+        .grade-cell-label {
+            font-family: 'DM Mono', monospace;
+            font-size: .7rem;
+            color: var(--text3);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            display: block
+        }
+
+        .grade-letter {
+            font-family: 'Playfair Display', serif;
+            font-size: 4rem;
+            font-weight: 900;
+            line-height: 1;
+            width: 90px;
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid;
+            margin: 0 auto 1rem
+        }
+
+        .gA {
+            color: var(--mint);
+            border-color: var(--mint);
+            box-shadow: 0 0 22px rgba(79, 255, 176, .3)
+        }
+
+        .gB {
+            color: var(--sky);
+            border-color: var(--sky);
+            box-shadow: 0 0 22px rgba(92, 228, 255, .3)
+        }
+
+        .gC {
+            color: var(--electric);
+            border-color: var(--electric);
+            box-shadow: 0 0 22px rgba(232, 255, 71, .3)
+        }
+
+        .gD {
+            color: var(--coral);
+            border-color: var(--coral);
+            box-shadow: 0 0 22px rgba(255, 92, 92, .3)
+        }
+
+        .gF {
+            color: #ff2020;
+            border-color: #ff2020;
+            box-shadow: 0 0 22px rgba(255, 32, 32, .3)
+        }
+
+        .grade-cell-desc {
+            font-size: .85rem;
+            color: var(--text3);
+            line-height: 1.5
+        }
+
+        .actions-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border)
+        }
+
+        .act-btn {
+            background: var(--surface);
+            border: none;
+            padding: 1.2rem;
+            font-family: 'DM Mono', monospace;
+            font-size: .75rem;
+            letter-spacing: .1em;
+            cursor: pointer;
+            transition: background .2s, color .2s;
+            text-align: center
+        }
+
+        .act-icon {
+            display: block;
+            font-size: 1.3rem;
+            margin-bottom: .4rem
+        }
+
+        .ab1 {
+            color: var(--lavender)
+        }
+
+        .ab2 {
+            color: var(--mint)
+        }
+
+        .ab3 {
+            color: var(--sky)
+        }
+
+        .ab4 {
+            color: var(--coral)
+        }
+
+        .ab1:hover {
+            background: rgba(192, 132, 252, .08)
+        }
+
+        .ab2:hover {
+            background: rgba(79, 255, 176, .08)
+        }
+
+        .ab3:hover {
+            background: rgba(92, 228, 255, .08)
+        }
+
+        .ab4:hover {
+            background: rgba(255, 92, 92, .08)
+        }
+
+        @media(max-width:800px) {
+            nav {
+                padding: 1.2rem 1.5rem
+            }
+
+            .main {
+                padding: 2.5rem 1.2rem 5rem
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr
+            }
+
+            .grade-comparison {
+                grid-template-columns: 1fr
+            }
+
+            .actions-bar {
+                grid-template-columns: 1fr 1fr
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="cursor-dot" id="cd"></div>
+    <div class="cursor-ring" id="cr"></div>
+    <div class="page">
+        <nav>
+            <a class="logo-wrap" href="index.html">
+                <span class="logo-name">FairScan</span>
+                <span class="logo-badge">v1.0</span>
+            </a>
+            <div class="breadcrumb">
+                <span>Home</span><span class="sep">›</span>
+                <span>Fix Tool</span><span class="sep">›</span>
+                <span class="cur">Before vs After</span>
+            </div>
+            <a class="nav-back" href="fix.html">← Back to Fix Tool</a>
+        </nav>
+        <div class="main">
+            <div class="page-header">
+                <div class="ph-meta"><span class="ph-num">06</span><span>Comparison Report</span></div>
+                <h1 class="ph-h1">Before vs<br><em>After</em></h1>
+                <p class="ph-sub">// see how bias fixes improved your dataset's fairness score</p>
+            </div>
+
+            <!-- NO FIX STATE -->
+            <div class="no-fix-msg" id="no-fix-state" style="display:none;">
+                <span class="no-fix-icon">🔧</span>
+                <div class="no-fix-title">No fixes applied yet</div>
+                <p class="no-fix-sub">Please apply bias fixes first to see the comparison.</p>
+                <a class="go-fix" href="fix.html">← Go to Fix Tool</a>
+            </div>
+
+            <!-- COMPARISON CONTENT -->
+            <div id="compare-content" style="display:none;">
+                <div class="stats-grid">
+                    <div class="stat-cell">
+                        <span class="stat-label">Original Overall Bias</span>
+                        <div class="stat-val before" id="old-overall">—</div>
+                        <div class="stat-sub">Before fix</div>
+                    </div>
+                    <div class="stat-cell">
+                        <span class="stat-label">Improved Overall Bias</span>
+                        <div class="stat-val after" id="new-overall">—</div>
+                        <div class="stat-sub">After fix</div>
+                    </div>
+                    <div class="stat-cell">
+                        <span class="stat-label">Total Improvement</span>
+                        <div class="stat-val improvement" id="improvement">—</div>
+                        <div class="stat-sub">Percentage points reduced</div>
+                    </div>
+                </div>
+
+                <!-- GRADE COMPARISON -->
+                <div class="grade-comparison">
+                    <div class="grade-cell">
+                        <span class="grade-cell-label">Fairness Grade — Before</span>
+                        <div class="grade-letter" id="grade-before">—</div>
+                        <div class="grade-cell-desc" id="grade-before-desc">Original dataset grade</div>
+                    </div>
+                    <div class="grade-cell">
+                        <span class="grade-cell-label">Fairness Grade — After</span>
+                        <div class="grade-letter" id="grade-after">—</div>
+                        <div class="grade-cell-desc" id="grade-after-desc">Post-fix dataset grade</div>
+                    </div>
+                </div>
+
+                <!-- COMPARISON CHART -->
+                <div class="chart-card">
+                    <div class="chart-title">Bias Score Comparison by Category</div>
+                    <canvas id="compareChart" height="300"></canvas>
+                </div>
+
+                <div class="actions-bar">
+                    <button class="act-btn ab1" onclick="downloadPDF()"><span class="act-icon">📄</span>DOWNLOAD
+                        PDF</button>
+                    <button class="act-btn ab2" onclick="window.location.href='dashboard.html'"><span
+                            class="act-icon">📊</span>DASHBOARD</button>
+                    <button class="act-btn ab3" onclick="window.location.href='fix.html'"><span
+                            class="act-icon">🔧</span>BACK TO FIX</button>
+                    <button class="act-btn ab4" onclick="window.location.href='upload.html'"><span
+                            class="act-icon">📂</span>NEW DATASET</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const cd = document.getElementById('cd'), cr = document.getElementById('cr');
+        let mx = 0, my = 0, rx = 0, ry = 0;
+        document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+        (function loop() { cd.style.left = mx + 'px'; cd.style.top = my + 'px'; rx += (mx - rx) * .13; ry += (my - ry) * .13; cr.style.left = rx + 'px'; cr.style.top = ry + 'px'; requestAnimationFrame(loop); })();
+
+        const fixedRaw = localStorage.getItem('fairscanfixedresults');
+        const originalRaw = localStorage.getItem('fairscan_results');
+
+        if (!fixedRaw) {
+            document.getElementById('no-fix-state').style.display = 'block';
+            document.getElementById('compare-content').style.display = 'none';
+        } else {
+            document.getElementById('no-fix-state').style.display = 'none';
+            document.getElementById('compare-content').style.display = 'block';
+
+            const data = JSON.parse(fixedRaw);
+            const original = originalRaw ? JSON.parse(originalRaw) : {};
+
+            // Stats
+            document.getElementById('old-overall').textContent = (data.previousOv || 0) + '%';
+            document.getElementById('new-overall').textContent = (data.fixedOv || 0) + '%';
+            document.getElementById('improvement').textContent = ((data.previousOv || 0) - (data.fixedOv || 0)) + 'pp';
+
+            // Grades
+            function calcGrade(score) { return score < 15 ? 'A' : score < 30 ? 'B' : score < 50 ? 'C' : score < 70 ? 'D' : 'F'; }
+            const gradeClass = { A: 'gA', B: 'gB', C: 'gC', D: 'gD', F: 'gF' };
+            const gradeDescs = { A: 'Excellent fairness', B: 'Good fairness', C: 'Moderate bias', D: 'High bias', F: 'Critical bias' };
+
+            const gradeBefore = calcGrade(data.previousOv || 0);
+            const gradeAfter = calcGrade(data.fixedOv || 0);
+
+            const gbEl = document.getElementById('grade-before');
+            gbEl.textContent = gradeBefore; gbEl.className = 'grade-letter ' + gradeClass[gradeBefore];
+            document.getElementById('grade-before-desc').textContent = gradeDescs[gradeBefore] || '';
+
+            const gaEl = document.getElementById('grade-after');
+            gaEl.textContent = gradeAfter; gaEl.className = 'grade-letter ' + gradeClass[gradeAfter];
+            document.getElementById('grade-after-desc').textContent = gradeDescs[gradeAfter] || '';
+
+            // Chart
+            Chart.defaults.color = '#5a5754';
+            Chart.defaults.borderColor = 'rgba(255,255,255,0.07)';
+            const ctx = document.getElementById('compareChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Gender Bias', 'Age Bias', 'Location Bias', 'Overall Bias'],
+                    datasets: [
+                        { label: 'Before Fix', data: [data.previousGb || 0, data.previousAb || 0, data.previousLb || 0, data.previousOv || 0], backgroundColor: 'rgba(255,92,92,0.7)', borderColor: 'rgba(255,92,92,1)', borderWidth: 1, borderRadius: 4 },
+                        { label: 'After Fix', data: [data.fixedGb || 0, data.fixedAb || 0, data.fixedLb || 0, data.fixedOv || 0], backgroundColor: 'rgba(79,255,176,0.7)', borderColor: 'rgba(79,255,176,1)', borderWidth: 1, borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { labels: { font: { family: 'DM Mono', size: 11 }, color: '#9d9a94', padding: 16, boxWidth: 12 } },
+                        tooltip: { backgroundColor: '#1a1a1d', borderColor: 'rgba(255,255,255,0.13)', borderWidth: 1, titleFont: { family: 'DM Mono' }, bodyFont: { family: 'DM Mono' }, callbacks: { label: ctx => ' ' + ctx.parsed.y + '% bias' } }
+                    },
+                    scales: {
+                        x: { ticks: { font: { family: 'DM Mono', size: 10 }, color: '#5a5754' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: { min: 0, max: 100, ticks: { font: { family: 'DM Mono', size: 10 }, color: '#5a5754', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                }
+            });
+        }
+
+        // PDF REPORT — Member 3 feature
+        function downloadPDF() {
+            const fixedRaw = localStorage.getItem('fairscanfixedresults');
+            const originalRaw = localStorage.getItem('fairscan_results');
+            if (!fixedRaw) { alert('No fix data found. Apply fixes first.'); return; }
+
+            const data = JSON.parse(fixedRaw);
+            const original = originalRaw ? JSON.parse(originalRaw) : {};
+
+            function calcGrade(score) { return score < 15 ? 'A' : score < 30 ? 'B' : score < 50 ? 'C' : score < 70 ? 'D' : 'F'; }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Header
+            doc.setFillColor(14, 14, 15);
+            doc.rect(0, 0, 210, 297, 'F');
+            doc.setTextColor(232, 255, 71);
+            doc.setFontSize(26);
+            doc.setFont('helvetica', 'bold');
+            doc.text('FairScan', 20, 25);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(157, 154, 148);
+            doc.text('AI Bias Detection & Audit Report', 20, 33);
+            doc.text('Generated: ' + new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }), 20, 40);
+
+            // Divider
+            doc.setDrawColor(232, 255, 71);
+            doc.setLineWidth(0.5);
+            doc.line(20, 45, 190, 45);
+
+            // Dataset Info
+            doc.setTextColor(232, 255, 71);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Dataset Information', 20, 57);
+            doc.setTextColor(200, 200, 200);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            const imap = { hr: 'HR & Recruitment', finance: 'Finance & Loans', healthcare: 'Healthcare' };
+            doc.text('File: ' + (original.filename || 'dataset.csv'), 20, 67);
+            doc.text('Industry: ' + (imap[original.industry] || original.industry || 'General'), 20, 75);
+            doc.text('Total Rows: ' + (original.rows || 'N/A').toLocaleString(), 20, 83);
+            doc.text('Total Columns: ' + (original.cols || 'N/A'), 20, 91);
+
+            // Results
+            doc.setTextColor(232, 255, 71);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Bias Analysis Results', 20, 107);
+
+            const beforeGrade = calcGrade(data.previousOv || 0);
+            const afterGrade = calcGrade(data.fixedOv || 0);
+            const improvement = (data.previousOv || 0) - (data.fixedOv || 0);
+
+            doc.setTextColor(200, 200, 200);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+
+            const rows = [
+                ['Metric', 'Before Fix', 'After Fix', 'Improvement'],
+                ['Gender Bias', (data.previousGb || 0) + '%', (data.fixedGb || 0) + '%', ((data.previousGb || 0) - (data.fixedGb || 0)) + 'pp'],
+                ['Age Bias', (data.previousAb || 0) + '%', (data.fixedAb || 0) + '%', ((data.previousAb || 0) - (data.fixedAb || 0)) + 'pp'],
+                ['Location Bias', (data.previousLb || 0) + '%', (data.fixedLb || 0) + '%', ((data.previousLb || 0) - (data.fixedLb || 0)) + 'pp'],
+                ['Overall Bias', (data.previousOv || 0) + '%', (data.fixedOv || 0) + '%', improvement + 'pp'],
+                ['Fairness Grade', beforeGrade, afterGrade, '']
+            ];
+
+            let y = 117;
+            rows.forEach((row, i) => {
+                if (i === 0) { doc.setFont('helvetica', 'bold'); doc.setTextColor(232, 255, 71); }
+                else { doc.setFont('helvetica', 'normal'); doc.setTextColor(200, 200, 200); }
+                doc.text(row[0], 20, y);
+                doc.text(row[1], 80, y);
+                doc.text(row[2], 120, y);
+                doc.text(row[3], 160, y);
+                y += 9;
+            });
+
+            doc.setDrawColor(80, 80, 80);
+            doc.setLineWidth(0.3);
+            doc.line(20, y, 190, y);
+
+            // Summary
+            doc.setTextColor(232, 255, 71);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Executive Summary', 20, y + 14);
+            doc.setTextColor(200, 200, 200);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            const summaryLines = [
+                `This dataset was analyzed for demographic bias across ${(original.found || []).length || 3} sensitive`,
+                `column types. The overall bias score improved from ${data.previousOv || 0}% to ${data.fixedOv || 0}%,`,
+                `a reduction of ${improvement} percentage points.`,
+                '',
+                `Fairness grade improved from ${beforeGrade} to ${afterGrade}.`,
+                '',
+                `Recommended next steps: Continue monitoring for bias as new data is added,`,
+                `and retrain any AI models using the improved dataset.`
+            ];
+            summaryLines.forEach((line, i) => { doc.text(line, 20, y + 24 + i * 7); });
+
+            // Footer
+            doc.setDrawColor(232, 255, 71);
+            doc.setLineWidth(0.3);
+            doc.line(20, 275, 190, 275);
+            doc.setTextColor(90, 87, 84);
+            doc.setFontSize(8);
+            doc.text('FairScan v1.0 · AI Bias Detection Platform · Confidential Audit Report', 20, 282);
+            doc.text('Page 1 of 1', 170, 282);
+
+            doc.save('FairScan_Audit_Report_' + (original.filename || 'dataset').replace('.csv', '') + '.pdf');
+        }
+    </script>
+</body>
+
+</html>

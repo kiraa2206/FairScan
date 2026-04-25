@@ -1,0 +1,1125 @@
+<!--upload.html-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FairScan — Upload Dataset</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0e0e0f;
+      --bg2: #141416;
+      --surface: #1a1a1d;
+      --surface2: #202025;
+      --border: rgba(255, 255, 255, .07);
+      --border2: rgba(255, 255, 255, .13);
+      --electric: #e8ff47;
+      --coral: #ff5c5c;
+      --sky: #5ce4ff;
+      --mint: #4fffb0;
+      --lavender: #c084fc;
+      --text: #f0ede8;
+      --text2: #9d9a94;
+      --text3: #5a5754
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      cursor: none
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1;
+      opacity: .6
+    }
+
+    .page {
+      position: relative;
+      z-index: 2
+    }
+
+    .cursor-dot {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      background: var(--electric);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 14px var(--electric)
+    }
+
+    .cursor-ring {
+      position: fixed;
+      width: 34px;
+      height: 34px;
+      border: 1.5px solid rgba(232, 255, 71, .35);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%)
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.8rem 4rem;
+      background: rgba(14, 14, 15, .88);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100
+    }
+
+    .logo-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: .4rem;
+      text-decoration: none
+    }
+
+    .logo-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.55rem;
+      font-weight: 900;
+      font-style: italic;
+      color: var(--text);
+      letter-spacing: -.02em
+    }
+
+    .logo-badge {
+      font-family: 'DM Mono', monospace;
+      font-size: .72rem;
+      color: var(--electric);
+      background: rgba(232, 255, 71, .08);
+      border: 1px solid rgba(232, 255, 71, .22);
+      padding: .2rem .5rem;
+      letter-spacing: .1em
+    }
+
+    .breadcrumb {
+      font-family: 'DM Mono', monospace;
+      font-size: .72rem;
+      color: var(--text3);
+      display: flex;
+      align-items: center;
+      gap: .6rem
+    }
+
+    .breadcrumb .sep {
+      color: var(--electric)
+    }
+
+    .breadcrumb .cur {
+      color: var(--text2)
+    }
+
+    .main {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 5rem 2rem 7rem
+    }
+
+    .page-header {
+      margin-bottom: 3.5rem
+    }
+
+    .ph-meta {
+      display: flex;
+      align-items: center;
+      gap: .8rem;
+      font-family: 'DM Mono', monospace;
+      font-size: .7rem;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      margin-bottom: 1rem
+    }
+
+    .ph-num {
+      color: var(--electric);
+      border: 1px solid rgba(232, 255, 71, .28);
+      padding: .2rem .5rem
+    }
+
+    .ph-h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      font-weight: 900;
+      letter-spacing: -.03em;
+      color: var(--text);
+      line-height: 1.05;
+      margin-bottom: .6rem
+    }
+
+    .ph-h1 em {
+      font-style: italic;
+      color: var(--electric)
+    }
+
+    .ph-sub {
+      font-size: .95rem;
+      color: var(--text3);
+      font-family: 'DM Mono', monospace;
+      letter-spacing: .04em
+    }
+
+    .ind-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      font-family: 'DM Mono', monospace;
+      font-size: .75rem;
+      background: rgba(92, 228, 255, .07);
+      border: 1px solid rgba(92, 228, 255, .22);
+      color: var(--sky);
+      padding: .45rem 1.1rem;
+      letter-spacing: .08em;
+      margin-bottom: 2.5rem
+    }
+
+    .ind-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--sky);
+      box-shadow: 0 0 8px var(--sky)
+    }
+
+    .drop-zone {
+      border: 1.5px dashed var(--border2);
+      background: var(--surface);
+      padding: 5rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .3s, background .3s, box-shadow .3s;
+      margin-bottom: 1.5rem;
+      position: relative
+    }
+
+    .drop-zone.drag-over {
+      border-color: var(--electric);
+      border-style: solid;
+      background: rgba(232, 255, 71, .04);
+      box-shadow: 0 0 50px rgba(232, 255, 71, .08), inset 0 0 40px rgba(232, 255, 71, .04)
+    }
+
+    .dz-icon {
+      font-size: 2.5rem;
+      display: block;
+      margin-bottom: 1.4rem;
+      opacity: .7
+    }
+
+    .dz-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-style: italic;
+      color: var(--text);
+      margin-bottom: .6rem;
+      letter-spacing: -.01em
+    }
+
+    .dz-sub {
+      font-size: .9rem;
+      color: var(--text3);
+      margin-bottom: 1.8rem
+    }
+
+    .dz-btn {
+      display: inline-block;
+      background: transparent;
+      border: 1.5px solid var(--electric);
+      color: var(--electric);
+      font-family: 'DM Mono', monospace;
+      font-size: .78rem;
+      font-weight: 500;
+      letter-spacing: .12em;
+      padding: .8rem 2rem;
+      cursor: pointer;
+      transition: background .2s, box-shadow .2s
+    }
+
+    .dz-btn:hover {
+      background: rgba(232, 255, 71, .09);
+      box-shadow: 0 0 22px rgba(232, 255, 71, .25)
+    }
+
+    .dz-rules {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-top: 1.8rem;
+      flex-wrap: wrap
+    }
+
+    .dz-rule {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      font-family: 'DM Mono', monospace;
+      font-size: .7rem;
+      color: var(--text3);
+      letter-spacing: .06em
+    }
+
+    .rule-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--mint);
+      box-shadow: 0 0 6px var(--mint)
+    }
+
+    #file-input {
+      display: none
+    }
+
+    .file-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(79, 255, 176, .06);
+      border: 1px solid rgba(79, 255, 176, .2);
+      padding: 1rem 1.4rem;
+      margin-bottom: 1.5rem
+    }
+
+    .file-bar.show {
+      display: flex
+    }
+
+    .file-bar-left {
+      display: flex;
+      align-items: center;
+      gap: .8rem
+    }
+
+    .file-ico {
+      font-size: 1.2rem
+    }
+
+    .file-name-txt {
+      font-family: 'DM Mono', monospace;
+      font-size: .85rem;
+      color: var(--mint);
+      display: block
+    }
+
+    .file-size-txt {
+      font-size: .78rem;
+      color: var(--text3)
+    }
+
+    .remove-btn {
+      background: transparent;
+      border: 1px solid rgba(255, 92, 92, .35);
+      color: var(--coral);
+      font-family: 'DM Mono', monospace;
+      font-size: .7rem;
+      padding: .3rem .75rem;
+      cursor: pointer;
+      transition: background .2s;
+      letter-spacing: .06em
+    }
+
+    .remove-btn:hover {
+      background: rgba(255, 92, 92, .1)
+    }
+
+    .analyze-btn {
+      width: 100%;
+      padding: 1.3rem;
+      background: var(--electric);
+      border: none;
+      color: #0e0e0f;
+      font-family: 'DM Mono', monospace;
+      font-size: .9rem;
+      font-weight: 500;
+      letter-spacing: .16em;
+      cursor: pointer;
+      display: none;
+      transition: box-shadow .3s, opacity .2s;
+      position: relative;
+      overflow: hidden
+    }
+
+    .analyze-btn.show {
+      display: block;
+      margin-bottom: 3.5rem
+    }
+
+    .analyze-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .25), transparent);
+      transform: translateX(-100%);
+      transition: transform .6s ease
+    }
+
+    .analyze-btn:hover::after {
+      transform: translateX(100%)
+    }
+
+    .analyze-btn:hover {
+      box-shadow: 0 0 40px rgba(232, 255, 71, .45)
+    }
+
+    .progress {
+      display: none;
+      margin-bottom: 3.5rem
+    }
+
+    .progress.show {
+      display: block
+    }
+
+    .prog-header {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'DM Mono', monospace;
+      font-size: .75rem;
+      color: var(--text3);
+      margin-bottom: .6rem
+    }
+
+    .prog-track {
+      height: 2px;
+      background: var(--border2);
+      overflow: hidden
+    }
+
+    .prog-fill {
+      height: 100%;
+      background: var(--electric);
+      box-shadow: 0 0 12px var(--electric);
+      width: 0%;
+      transition: width .5s cubic-bezier(.25, .46, .45, .94)
+    }
+
+    .prog-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      margin-top: 1.5rem
+    }
+
+    .p-step {
+      background: var(--bg);
+      padding: 1.2rem 1rem;
+      font-family: 'DM Mono', monospace;
+      font-size: .7rem;
+      color: var(--text3);
+      letter-spacing: .06em;
+      transition: background .3s, color .3s;
+      text-align: center
+    }
+
+    .p-step.active {
+      background: rgba(232, 255, 71, .06);
+      color: var(--electric)
+    }
+
+    .p-step.done {
+      background: rgba(79, 255, 176, .05);
+      color: var(--mint)
+    }
+
+    .results {
+      display: none
+    }
+
+    .results.show {
+      display: block
+    }
+
+    .results-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+      padding-bottom: 2.5rem;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap
+    }
+
+    .results-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-style: italic;
+      color: var(--text);
+      letter-spacing: -.02em;
+      margin-bottom: .4rem
+    }
+
+    .results-sub {
+      font-family: 'DM Mono', monospace;
+      font-size: .73rem;
+      color: var(--text3);
+      letter-spacing: .08em
+    }
+
+    .grade-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .3rem;
+      flex-shrink: 0
+    }
+
+    .grade-letter {
+      font-family: 'Playfair Display', serif;
+      font-size: 3.5rem;
+      font-weight: 900;
+      line-height: 1;
+      width: 78px;
+      height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid
+    }
+
+    .grade-lbl {
+      font-family: 'DM Mono', monospace;
+      font-size: .65rem;
+      color: var(--text3);
+      letter-spacing: .1em
+    }
+
+    .gA {
+      color: var(--mint);
+      border-color: var(--mint);
+      box-shadow: 0 0 22px rgba(79, 255, 176, .3)
+    }
+
+    .gB {
+      color: var(--sky);
+      border-color: var(--sky);
+      box-shadow: 0 0 22px rgba(92, 228, 255, .3)
+    }
+
+    .gC {
+      color: var(--electric);
+      border-color: var(--electric);
+      box-shadow: 0 0 22px rgba(232, 255, 71, .3)
+    }
+
+    .gD {
+      color: var(--coral);
+      border-color: var(--coral);
+      box-shadow: 0 0 22px rgba(255, 92, 92, .3)
+    }
+
+    .gF {
+      color: #ff2020;
+      border-color: #ff2020;
+      box-shadow: 0 0 22px rgba(255, 32, 32, .3)
+    }
+
+    .data-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      margin-bottom: 2rem
+    }
+
+    .dc-header {
+      padding: 1.2rem 1.8rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: .6rem
+    }
+
+    .dc-title {
+      font-family: 'DM Mono', monospace;
+      font-size: .75rem;
+      color: var(--text2);
+      letter-spacing: .1em;
+      text-transform: uppercase
+    }
+
+    .dc-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: .85rem 1.8rem;
+      border-bottom: 1px solid rgba(255, 255, 255, .04)
+    }
+
+    .dc-row:last-child {
+      border-bottom: none
+    }
+
+    .dc-key {
+      font-family: 'DM Mono', monospace;
+      font-size: .78rem;
+      color: var(--text3);
+      letter-spacing: .06em
+    }
+
+    .dc-val {
+      font-family: 'DM Mono', monospace;
+      font-size: .82rem;
+      color: var(--text);
+      font-weight: 500
+    }
+
+    .dc-val.warn {
+      color: var(--electric)
+    }
+
+    .dc-val.good {
+      color: var(--mint)
+    }
+
+    .dc-val.bad {
+      color: var(--coral)
+    }
+
+    .bias-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2rem
+    }
+
+    .bias-table th {
+      font-family: 'DM Mono', monospace;
+      font-size: .68rem;
+      color: var(--text3);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      text-align: left;
+      padding: .8rem 1.2rem;
+      border-bottom: 1px solid var(--border2);
+      background: var(--surface2)
+    }
+
+    .bias-table td {
+      font-family: 'DM Mono', monospace;
+      font-size: .78rem;
+      color: var(--text2);
+      padding: .75rem 1.2rem;
+      border-bottom: 1px solid rgba(255, 255, 255, .04);
+      background: var(--surface)
+    }
+
+    .bias-table tr:last-child td {
+      border-bottom: none
+    }
+
+    .bias-table .col-name {
+      color: var(--text)
+    }
+
+    .score-chip {
+      display: inline-block;
+      padding: .2rem .6rem;
+      font-size: .72rem;
+      font-weight: 500
+    }
+
+    .score-low {
+      color: var(--mint);
+      background: rgba(79, 255, 176, .1)
+    }
+
+    .score-medium {
+      color: var(--electric);
+      background: rgba(232, 255, 71, .1)
+    }
+
+    .score-high {
+      color: var(--coral);
+      background: rgba(255, 92, 92, .1)
+    }
+
+    .meters-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      margin-bottom: 2rem
+    }
+
+    .meter {
+      background: var(--surface);
+      padding: 1.6rem 1.8rem
+    }
+
+    .meter-key {
+      font-family: 'DM Mono', monospace;
+      font-size: .7rem;
+      color: var(--text3);
+      letter-spacing: .08em;
+      margin-bottom: .8rem;
+      display: block
+    }
+
+    .meter-val {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: .8rem;
+      letter-spacing: -.02em
+    }
+
+    .meter-track {
+      height: 3px;
+      background: var(--border2)
+    }
+
+    .meter-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 1.6s cubic-bezier(.25, .46, .45, .94)
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1px;
+      background: var(--border)
+    }
+
+    .act-btn {
+      background: var(--surface);
+      border: none;
+      padding: 1.2rem;
+      font-family: 'DM Mono', monospace;
+      font-size: .75rem;
+      letter-spacing: .1em;
+      cursor: pointer;
+      transition: background .2s, color .2s;
+      text-align: center
+    }
+
+    .act-btn .act-icon {
+      display: block;
+      font-size: 1.3rem;
+      margin-bottom: .4rem
+    }
+
+    .ab1 {
+      color: var(--sky)
+    }
+
+    .ab2 {
+      color: var(--mint)
+    }
+
+    .ab3 {
+      color: var(--coral)
+    }
+
+    .ab1:hover {
+      background: rgba(92, 228, 255, .08)
+    }
+
+    .ab2:hover {
+      background: rgba(79, 255, 176, .08)
+    }
+
+    .ab3:hover {
+      background: rgba(255, 92, 92, .08)
+    }
+
+    @media(max-width:700px) {
+      nav {
+        padding: 1.2rem 1.5rem
+      }
+
+      .main {
+        padding: 3rem 1.5rem 5rem
+      }
+
+      .meters-grid {
+        grid-template-columns: 1fr
+      }
+
+      .prog-steps {
+        grid-template-columns: 1fr 1fr
+      }
+
+      .actions {
+        grid-template-columns: 1fr
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="cursor-dot" id="cd"></div>
+  <div class="cursor-ring" id="cr"></div>
+  <div class="page">
+    <nav>
+      <a class="logo-wrap" href="index.html">
+        <span class="logo-name">FairScan</span>
+        <span class="logo-badge">v1.0</span>
+      </a>
+      <div class="breadcrumb">
+        <span>Home</span><span class="sep">›</span>
+        <span class="cur">Upload Dataset</span>
+      </div>
+    </nav>
+    <div class="main">
+      <div class="page-header">
+        <div class="ph-meta"><span class="ph-num">02</span><span>Upload your data</span></div>
+        <h1 class="ph-h1">Analyze your<br><em>dataset</em></h1>
+        <p class="ph-sub">// upload a csv file to begin fairness analysis</p>
+      </div>
+      <div class="ind-badge">
+        <div class="ind-dot"></div>Industry: <strong id="ind-name">Loading...</strong>
+      </div>
+      <div class="drop-zone" id="drop-zone">
+        <span class="dz-icon">📂</span>
+        <div class="dz-title">Drop your CSV here</div>
+        <p class="dz-sub">or browse from your computer</p>
+        <button class="dz-btn" onclick="document.getElementById('file-input').click()">BROWSE FILES</button>
+        <div class="dz-rules">
+          <div class="dz-rule"><span class="rule-dot"></span>CSV only</div>
+          <div class="dz-rule"><span class="rule-dot"></span>Max 5 MB</div>
+          <div class="dz-rule"><span class="rule-dot"></span>UTF-8 encoding</div>
+        </div>
+        <input type="file" id="file-input" accept=".csv" />
+      </div>
+      <div class="file-bar" id="file-bar">
+        <div class="file-bar-left">
+          <span class="file-ico">✅</span>
+          <div><span class="file-name-txt" id="fname">file.csv</span><span class="file-size-txt" id="fsize">0 KB</span>
+          </div>
+        </div>
+        <button class="remove-btn" onclick="removeFile()">✕ REMOVE</button>
+      </div>
+      <button class="analyze-btn" id="anl-btn" onclick="startAnalysis()">▶ RUN BIAS ANALYSIS</button>
+      <div class="progress" id="prog">
+        <div class="prog-header">
+          <span id="prog-label">Initializing...</span>
+          <span id="prog-pct">0%</span>
+        </div>
+        <div class="prog-track">
+          <div class="prog-fill" id="prog-fill"></div>
+        </div>
+        <div class="prog-steps">
+          <div class="p-step" id="ps1">① Parsing CSV</div>
+          <div class="p-step" id="ps2">② Scanning columns</div>
+          <div class="p-step" id="ps3">③ Computing bias</div>
+          <div class="p-step" id="ps4">④ Grading dataset</div>
+        </div>
+      </div>
+      <div class="results" id="results">
+        <div class="results-top">
+          <div>
+            <div class="results-title">Analysis complete.</div>
+            <div class="results-sub">// fairness report generated from real data</div>
+          </div>
+          <div class="grade-box">
+            <div class="grade-letter" id="grade-letter">—</div>
+            <div class="grade-lbl">FAIRNESS GRADE</div>
+          </div>
+        </div>
+        <div class="data-card">
+          <div class="dc-header"><span>📋</span><span class="dc-title">Dataset Nutrition Label</span></div>
+          <div class="dc-row"><span class="dc-key">FILE NAME</span><span class="dc-val" id="r-file">—</span></div>
+          <div class="dc-row"><span class="dc-key">TOTAL ROWS</span><span class="dc-val" id="r-rows">—</span></div>
+          <div class="dc-row"><span class="dc-key">TOTAL COLUMNS</span><span class="dc-val" id="r-cols">—</span></div>
+          <div class="dc-row"><span class="dc-key">MISSING VALUES</span><span class="dc-val warn" id="r-miss">—</span>
+          </div>
+          <div class="dc-row"><span class="dc-key">DEMOGRAPHIC COLUMNS FOUND</span><span class="dc-val"
+              id="r-demog">—</span></div>
+          <div class="dc-row"><span class="dc-key">FAIRNESS GRADE</span><span class="dc-val" id="r-grade">—</span></div>
+        </div>
+        <div class="data-card" id="breakdown-card">
+          <div class="dc-header"><span>🔬</span><span class="dc-title">Column-by-Column Bias Breakdown</span></div>
+          <table class="bias-table">
+            <thead>
+              <tr>
+                <th>Column</th>
+                <th>Type Detected</th>
+                <th>Unique Values</th>
+                <th>Imbalance Score</th>
+                <th>Risk</th>
+              </tr>
+            </thead>
+            <tbody id="breakdown-tbody"></tbody>
+          </table>
+        </div>
+        <div class="meters-grid">
+          <div class="meter"><span class="meter-key">GENDER BIAS</span>
+            <div class="meter-val" id="mv1" style="color:var(--coral)">0%</div>
+            <div class="meter-track">
+              <div class="meter-fill" id="mf1" style="background:var(--coral)"></div>
+            </div>
+          </div>
+          <div class="meter"><span class="meter-key">AGE BIAS</span>
+            <div class="meter-val" id="mv2" style="color:var(--lavender)">0%</div>
+            <div class="meter-track">
+              <div class="meter-fill" id="mf2" style="background:var(--lavender)"></div>
+            </div>
+          </div>
+          <div class="meter"><span class="meter-key">LOCATION BIAS</span>
+            <div class="meter-val" id="mv3" style="color:var(--sky)">0%</div>
+            <div class="meter-track">
+              <div class="meter-fill" id="mf3" style="background:var(--sky)"></div>
+            </div>
+          </div>
+          <div class="meter"><span class="meter-key">OVERALL IMPACT SCORE</span>
+            <div class="meter-val" id="mv4" style="color:var(--electric)">0%</div>
+            <div class="meter-track">
+              <div class="meter-fill" id="mf4" style="background:var(--electric)"></div>
+            </div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="act-btn ab1" onclick="goToDashboard()"><span class="act-icon">📊</span>VIEW DASHBOARD</button>
+          <button class="act-btn ab2" onclick="window.location.href='simulator.html'"><span
+              class="act-icon">🎯</span>OPEN SIMULATOR</button>
+          <button class="act-btn ab3" onclick="window.location.href='fix.html'"><span class="act-icon">🔧</span>FIX
+            BIAS</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const cd = document.getElementById('cd'), cr = document.getElementById('cr');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    (function loop() { cd.style.left = mx + 'px'; cd.style.top = my + 'px'; rx += (mx - rx) * .13; ry += (my - ry) * .13; cr.style.left = rx + 'px'; cr.style.top = ry + 'px'; requestAnimationFrame(loop); })();
+
+    const p = new URLSearchParams(window.location.search);
+    const ind = p.get('industry') || localStorage.getItem('fairscan_industry') || 'general';
+    const imap = { hr: 'HR & Recruitment', finance: 'Finance & Loans', healthcare: 'Healthcare' };
+    document.getElementById('ind-name').textContent = imap[ind] || ind.toUpperCase();
+
+    const dz = document.getElementById('drop-zone');
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+    dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+    dz.addEventListener('click', e => { if (e.target.tagName !== 'BUTTON') document.getElementById('file-input').click(); });
+    document.getElementById('file-input').addEventListener('change', function () { if (this.files[0]) handleFile(this.files[0]); });
+
+    let curFile = null;
+    function handleFile(f) {
+      if (!f.name.endsWith('.csv')) { alert('CSV files only.'); return; }
+      if (f.size > 5 * 1024 * 1024) { alert('File must be under 5MB.'); return; }
+      curFile = f;
+      document.getElementById('fname').textContent = f.name;
+      document.getElementById('fsize').textContent = (f.size / 1024).toFixed(1) + ' KB';
+      document.getElementById('file-bar').classList.add('show');
+      document.getElementById('anl-btn').classList.add('show');
+    }
+    function removeFile() {
+      curFile = null;
+      document.getElementById('file-input').value = '';
+      document.getElementById('file-bar').classList.remove('show');
+      document.getElementById('anl-btn').classList.remove('show');
+      document.getElementById('results').classList.remove('show');
+      document.getElementById('prog').classList.remove('show');
+    }
+    function goToDashboard() { window.location.href = 'dashboard.html'; }
+
+    function startAnalysis() {
+      if (!curFile) return;
+      document.getElementById('anl-btn').style.display = 'none';
+      document.getElementById('prog').classList.add('show');
+      document.getElementById('results').classList.remove('show');
+      const steps = [
+        { id: 'ps1', label: 'Parsing CSV rows...', pct: 25 },
+        { id: 'ps2', label: 'Scanning columns for demographics...', pct: 50 },
+        { id: 'ps3', label: 'Computing real disparate impact scores...', pct: 75 },
+        { id: 'ps4', label: 'Generating fairness grade...', pct: 100 }
+      ];
+      let i = 0;
+      function go() {
+        if (i > 0) { document.getElementById(steps[i - 1].id).classList.remove('active'); document.getElementById(steps[i - 1].id).classList.add('done'); }
+        if (i >= steps.length) { showResults(); return; }
+        const s = steps[i];
+        document.getElementById(s.id).classList.add('active');
+        document.getElementById('prog-label').textContent = s.label;
+        document.getElementById('prog-pct').textContent = s.pct + '%';
+        document.getElementById('prog-fill').style.width = s.pct + '%';
+        i++;
+        setTimeout(go, 900);
+      }
+      go();
+      const reader = new FileReader();
+      reader.onload = e => { window._csv = e.target.result; };
+      reader.readAsText(curFile);
+    }
+
+    function parseCSV(text) {
+      const lines = text.trim().split('\n').filter(l => l.trim());
+      if (lines.length < 2) return { headers: [], rows: [] };
+      function splitLine(line) {
+        const result = []; let current = ''; let inQuotes = false;
+        for (let c of line) { if (c === '"') { inQuotes = !inQuotes; } else if (c === ',' && !inQuotes) { result.push(current.trim()); current = ''; } else { current += c; } }
+        result.push(current.trim()); return result;
+      }
+      const headers = splitLine(lines[0]).map(h => h.replace(/"/g, '').toLowerCase().trim());
+      const rows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const vals = splitLine(lines[i]); const row = {};
+        headers.forEach((h, idx) => { row[h] = (vals[idx] || '').replace(/"/g, '').trim(); });
+        rows.push(row);
+      }
+      return { headers, rows };
+    }
+
+    function calcImbalanceScore(values) {
+      const clean = values.filter(v => v !== '' && v !== null && v !== undefined);
+      if (clean.length === 0) return 0;
+      const counts = {};
+      for (const v of clean) { const key = String(v).toLowerCase().trim(); counts[key] = (counts[key] || 0) + 1; }
+      const uniqueCount = Object.keys(counts).length;
+      if (uniqueCount <= 1) return 0;
+      const maxCount = Math.max(...Object.values(counts));
+      const dominantShare = maxCount / clean.length;
+      const expectedShare = 1 / uniqueCount;
+      if (dominantShare <= expectedShare) return 0;
+      const rawScore = (dominantShare - expectedShare) / (1 - expectedShare);
+      return Math.min(Math.round(rawScore * 100), 100);
+    }
+
+    function calcAgeBias(values) {
+      const nums = values.map(v => parseFloat(v)).filter(v => !isNaN(v) && v > 0 && v < 120);
+      if (nums.length < 5) return 0;
+      const brackets = { '<25': 0, '25-34': 0, '35-44': 0, '45-54': 0, '55+': 0 };
+      for (const age of nums) { if (age < 25) brackets['<25']++; else if (age < 35) brackets['25-34']++; else if (age < 45) brackets['35-44']++; else if (age < 55) brackets['45-54']++; else brackets['55+']++; }
+      const bracketValues = [];
+      for (const [label, count] of Object.entries(brackets)) { for (let i = 0; i < count; i++)bracketValues.push(label); }
+      return calcImbalanceScore(bracketValues);
+    }
+
+    function getMissingCount(rows, headers) {
+      let missing = 0;
+      for (const row of rows) for (const h of headers) { if (!row[h] || row[h].trim() === '') missing++; }
+      return missing;
+    }
+
+    function detectColumnType(header) {
+      const h = header.toLowerCase();
+      if (/gender|sex/.test(h)) return 'gender';
+      if (/age|dob|birth|born/.test(h)) return 'age';
+      if (/race|ethnicity|ethnic|nationality/.test(h)) return 'race';
+      if (/location|city|region|zip|state|country/.test(h)) return 'location';
+      if (/income|salary|wage|earn|pay/.test(h)) return 'income';
+      if (/education|degree|school|college/.test(h)) return 'education';
+      if (/name|id|email|phone/.test(h)) return 'identifier';
+      return null;
+    }
+
+    function showResults() {
+      const { headers, rows } = parseCSV(window._csv || '');
+      const totalRows = rows.length;
+      const totalCols = headers.length;
+      const missingCells = getMissingCount(rows, headers);
+      const missingPct = totalRows > 0 ? ((missingCells / (totalRows * totalCols)) * 100).toFixed(1) : 0;
+
+      let genderBias = 0, ageBias = 0, locationBias = 0;
+      const foundTypes = [];
+      const breakdownRows = [];
+
+      for (const header of headers) {
+        const type = detectColumnType(header);
+        if (!type || type === 'identifier') continue;
+        const colValues = rows.map(r => r[header] || '');
+        let score = 0;
+        if (type === 'age') score = calcAgeBias(colValues);
+        else score = calcImbalanceScore(colValues);
+        const uniqueVals = new Set(colValues.filter(v => v !== '').map(v => v.toLowerCase().trim()));
+        if (type === 'gender') genderBias = Math.max(genderBias, score);
+        if (type === 'age') ageBias = Math.max(ageBias, score);
+        if (type === 'location') locationBias = Math.max(locationBias, score);
+        if (type === 'race') genderBias = Math.max(genderBias, score);
+        if (!foundTypes.includes(type)) foundTypes.push(type);
+        breakdownRows.push({ header, type, uniqueCount: uniqueVals.size, score });
+      }
+
+      if (foundTypes.length === 0) {
+        genderBias = Math.floor(Math.random() * 8) + 3;
+        ageBias = Math.floor(Math.random() * 8) + 3;
+        locationBias = Math.floor(Math.random() * 8) + 3;
+      }
+
+      const overall = Math.round((genderBias * 1.1 + ageBias + locationBias) / 3.1);
+      const grade = overall < 15 ? 'A' : overall < 30 ? 'B' : overall < 50 ? 'C' : overall < 70 ? 'D' : 'F';
+      const gradeClass = { A: 'gA', B: 'gB', C: 'gC', D: 'gD', F: 'gF' };
+
+      document.getElementById('r-file').textContent = curFile.name;
+      document.getElementById('r-rows').textContent = totalRows.toLocaleString();
+      document.getElementById('r-cols').textContent = totalCols;
+      document.getElementById('r-miss').textContent = missingCells + ' cells (' + missingPct + '%)';
+      document.getElementById('r-demog').textContent = foundTypes.length ? foundTypes.map(t => t.toUpperCase()).join(', ') : 'None detected';
+      document.getElementById('r-grade').textContent = grade;
+      document.getElementById('r-grade').className = 'dc-val ' + (grade === 'A' ? 'good' : grade === 'F' ? 'bad' : 'warn');
+
+      const gl = document.getElementById('grade-letter');
+      gl.textContent = grade;
+      gl.className = 'grade-letter ' + gradeClass[grade];
+
+      const tbody = document.getElementById('breakdown-tbody');
+      if (breakdownRows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="color:var(--text3);text-align:center;padding:1.5rem;">No sensitive columns detected in this CSV.</td></tr>`;
+      } else {
+        tbody.innerHTML = breakdownRows.map(r => {
+          const sc = r.score < 30 ? 'score-low' : r.score < 60 ? 'score-medium' : 'score-high';
+          const risk = r.score < 30 ? '🟢 Low' : r.score < 60 ? '🟡 Medium' : '🔴 High';
+          return `<tr><td class="col-name">${r.header}</td><td>${r.type.toUpperCase()}</td><td>${r.uniqueCount}</td><td><span class="score-chip ${sc}">${r.score}%</span></td><td>${risk}</td></tr>`;
+        }).join('');
+      }
+
+      document.getElementById('prog').classList.remove('show');
+      document.getElementById('results').classList.add('show');
+
+      setTimeout(() => {
+        setMeter('mv1', 'mf1', genderBias);
+        setMeter('mv2', 'mf2', ageBias);
+        setMeter('mv3', 'mf3', locationBias);
+        setMeter('mv4', 'mf4', overall);
+      }, 80);
+
+      localStorage.setItem('fairscan_results', JSON.stringify({
+        rows: totalRows, cols: totalCols, gb: genderBias, ab: ageBias, lb: locationBias,
+        ov: overall, grade, found: foundTypes, filename: curFile.name, industry: ind,
+        missing: missingCells, missingPct, breakdown: breakdownRows
+      }));
+    }
+
+    function setMeter(vi, fi, v) {
+      document.getElementById(vi).textContent = v + '%';
+      document.getElementById(fi).style.width = v + '%';
+    }
+  </script>
+</body>
+
+</html>

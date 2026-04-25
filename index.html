@@ -1,0 +1,871 @@
+<!--index.html-->
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>FairScan — AI Bias Detection</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
+
+    <style>
+        :root {
+
+            --bg: #0e0e0f;
+            --bg2: #141416;
+            --surface: #1a1a1d;
+            --surface2: #202025;
+
+            --border: rgba(255, 255, 255, .07);
+            --border2: rgba(255, 255, 255, .12);
+
+            --electric: #e8ff47;
+            --coral: #ff5c5c;
+            --sky: #5ce4ff;
+            --mint: #4fffb0;
+
+            --text: #f0ede8;
+            --text2: #9d9a94;
+            --text3: #5a5754;
+
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            cursor: none
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 1;
+            opacity: .6
+        }
+
+        .page {
+            position: relative;
+            z-index: 2
+        }
+
+        .cursor-dot {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            background: var(--electric);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 14px var(--electric);
+            transition: width .15s, height .15s
+        }
+
+        .cursor-ring {
+            position: fixed;
+            width: 34px;
+            height: 34px;
+            border: 1.5px solid rgba(232, 255, 71, .35);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transform: translate(-50%, -50%)
+        }
+
+        nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.8rem 4rem;
+            background: rgba(14, 14, 15, .88);
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100
+        }
+
+        .logo-wrap {
+            display: flex;
+            align-items: baseline;
+            gap: .4rem
+        }
+
+        .logo-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.55rem;
+            font-weight: 900;
+            font-style: italic;
+            color: var(--text);
+            letter-spacing: -.02em
+        }
+
+        .logo-badge {
+            font-family: 'DM Mono', monospace;
+            font-size: .72rem;
+            color: var(--electric);
+            background: rgba(232, 255, 71, .08);
+            border: 1px solid rgba(232, 255, 71, .22);
+            padding: .2rem .5rem;
+            letter-spacing: .1em
+        }
+
+        .nav-pill {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            font-family: 'DM Mono', monospace;
+            font-size: .72rem;
+            color: var(--text3)
+        }
+
+        .pulse {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--mint);
+            box-shadow: 0 0 8px var(--mint);
+            animation: pulse 2.5s ease-in-out infinite
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .3
+            }
+        }
+
+        .hero {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 8rem 4rem 5rem
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: .8rem;
+            font-family: 'DM Mono', monospace;
+            font-size: .75rem;
+            color: var(--text3);
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            animation: fadeUp .7s .1s ease forwards
+        }
+
+        .eyebrow::before {
+            content: '';
+            display: block;
+            width: 24px;
+            height: 1px;
+            background: var(--electric);
+            box-shadow: 0 0 8px var(--electric)
+        }
+
+        .headline {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(3.8rem, 7.5vw, 7.5rem);
+            font-weight: 900;
+            line-height: 1.0;
+            letter-spacing: -.04em;
+            color: var(--text);
+            margin-bottom: 1.8rem;
+            opacity: 0;
+            animation: fadeUp .8s .22s ease forwards
+        }
+
+        .headline em {
+            font-style: italic;
+            color: var(--electric);
+            position: relative
+        }
+
+        .headline em::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--electric);
+            opacity: .35
+        }
+
+        .hero-desc {
+            font-size: 1.1rem;
+            color: var(--text2);
+            max-width: 500px;
+            line-height: 1.8;
+            font-weight: 300;
+            margin-bottom: 4.5rem;
+            opacity: 0;
+            animation: fadeUp .8s .36s ease forwards
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 4.5rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: fadeUp .8s .5s ease forwards
+        }
+
+        .stat-val {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -.04em;
+            color: var(--text)
+        }
+
+        .stat-val sup {
+            font-size: 1.6rem;
+            color: var(--electric)
+        }
+
+        .stat-lbl {
+            font-size: .78rem;
+            color: var(--text3);
+            font-weight: 400;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            margin-top: .4rem
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(28px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .industry {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 7rem 4rem
+        }
+
+        .sec-meta {
+            display: flex;
+            align-items: center;
+            gap: .8rem;
+            margin-bottom: 1rem
+        }
+
+        .sec-num {
+            font-family: 'DM Mono', monospace;
+            font-size: .68rem;
+            color: var(--electric);
+            border: 1px solid rgba(232, 255, 71, .28);
+            padding: .22rem .55rem;
+            letter-spacing: .1em
+        }
+
+        .sec-tag {
+            font-family: 'DM Mono', monospace;
+            font-size: .73rem;
+            color: var(--text3);
+            letter-spacing: .1em;
+            text-transform: uppercase
+        }
+
+        .sec-h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 3.5vw, 3.2rem);
+            font-weight: 700;
+            letter-spacing: -.025em;
+            color: var(--text);
+            margin-bottom: .8rem
+        }
+
+        .sec-p {
+            font-size: .97rem;
+            color: var(--text2);
+            max-width: 460px;
+            line-height: 1.75;
+            font-weight: 300;
+            margin-bottom: 3.5rem
+        }
+
+        .cards-wrap {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border: 1px solid var(--border);
+            gap: 1px;
+            background: var(--border)
+        }
+
+        .card {
+            background: var(--bg);
+            padding: 3rem 2.5rem 2.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.4rem;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: background .3s
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--ca);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform .45s cubic-bezier(.25, .46, .45, .94);
+            box-shadow: 0 -2px 20px var(--ca)
+        }
+
+        .card:hover {
+            background: var(--surface)
+        }
+
+        .card:hover::before {
+            transform: scaleX(1)
+        }
+
+        .c1 {
+            --ca: var(--sky)
+        }
+
+        .c2 {
+            --ca: var(--electric)
+        }
+
+        .c3 {
+            --ca: var(--coral)
+        }
+
+        .card-ico {
+            width: 54px;
+            height: 54px;
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+            transition: border-color .3s, box-shadow .3s
+        }
+
+        .c1:hover .card-ico {
+            border-color: var(--sky);
+            box-shadow: 0 0 22px rgba(92, 228, 255, .2)
+        }
+
+        .c2:hover .card-ico {
+            border-color: var(--electric);
+            box-shadow: 0 0 22px rgba(232, 255, 71, .2)
+        }
+
+        .c3:hover .card-ico {
+            border-color: var(--coral);
+            box-shadow: 0 0 22px rgba(255, 92, 92, .2)
+        }
+
+        .card-h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.45rem;
+            font-weight: 700;
+            letter-spacing: -.01em;
+            color: var(--text);
+            line-height: 1.2
+        }
+
+        .card-p {
+            font-size: .9rem;
+            color: var(--text2);
+            line-height: 1.72;
+            font-weight: 300;
+            flex: 1
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .45rem
+        }
+
+        .chip {
+            font-family: 'DM Mono', monospace;
+            font-size: .65rem;
+            border: 1px solid var(--border2);
+            color: var(--text3);
+            padding: .25rem .6rem;
+            letter-spacing: .06em;
+            transition: border-color .2s, color .2s
+        }
+
+        .c1:hover .chip {
+            border-color: rgba(92, 228, 255, .35);
+            color: var(--sky)
+        }
+
+        .c2:hover .chip {
+            border-color: rgba(232, 255, 71, .35);
+            color: var(--electric)
+        }
+
+        .c3:hover .chip {
+            border-color: rgba(255, 92, 92, .35);
+            color: var(--coral)
+        }
+
+        .card-foot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: .5rem;
+            border-top: 1px solid var(--border)
+        }
+
+        .card-cta-lbl {
+            font-size: .84rem;
+            font-weight: 500;
+            color: var(--text3);
+            transition: color .2s
+        }
+
+        .card-arrow {
+            font-size: 1.1rem;
+            color: var(--text3);
+            transition: transform .25s, color .2s
+        }
+
+        .c1:hover .card-cta-lbl,
+        .c1:hover .card-arrow {
+            color: var(--sky)
+        }
+
+        .c2:hover .card-cta-lbl,
+        .c2:hover .card-arrow {
+            color: var(--electric)
+        }
+
+        .c3:hover .card-cta-lbl,
+        .c3:hover .card-arrow {
+            color: var(--coral)
+        }
+
+        .card:hover .card-arrow {
+            transform: translateX(5px)
+        }
+
+        .process {
+            background: var(--bg2);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border)
+        }
+
+        .process-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr)
+        }
+
+        .proc-item {
+            padding: 3rem 2rem;
+            border-right: 1px solid var(--border)
+        }
+
+        .proc-item:last-child {
+            border-right: none
+        }
+
+        .proc-step {
+            font-family: 'DM Mono', monospace;
+            font-size: .62rem;
+            color: var(--electric);
+            letter-spacing: .14em;
+            display: block;
+            margin-bottom: 1.2rem
+        }
+
+        .proc-icon {
+            font-size: 1.6rem;
+            display: block;
+            margin-bottom: .8rem
+        }
+
+        .proc-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: .4rem
+        }
+
+        .proc-desc {
+            font-size: .82rem;
+            color: var(--text3);
+            line-height: 1.55;
+            font-weight: 300
+        }
+
+        .quote-wrap {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 8rem 4rem;
+            text-align: center
+        }
+
+        .quote-mark {
+            font-family: 'Playfair Display', serif;
+            font-size: 6rem;
+            line-height: .7;
+            color: var(--electric);
+            opacity: .25;
+            display: block;
+            margin-bottom: 1.5rem
+        }
+
+        .quote-body {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.4rem, 2.5vw, 2.1rem);
+            font-style: italic;
+            font-weight: 400;
+            color: var(--text);
+            line-height: 1.55;
+            margin-bottom: 2rem
+        }
+
+        .quote-body strong {
+            font-style: normal;
+            color: var(--electric)
+        }
+
+        .quote-attr {
+            font-family: 'DM Mono', monospace;
+            font-size: .72rem;
+            color: var(--text3);
+            letter-spacing: .14em
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 2.5rem 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between
+        }
+
+        .foot-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-style: italic;
+            color: var(--text2)
+        }
+
+        .foot-copy {
+            font-family: 'DM Mono', monospace;
+            font-size: .7rem;
+            color: var(--text3);
+            letter-spacing: .08em
+        }
+
+        @media(max-width:900px) {
+
+            nav,
+            .hero,
+            .industry,
+            .quote-wrap {
+                padding-left: 2rem;
+                padding-right: 2rem
+            }
+
+            .cards-wrap {
+                grid-template-columns: 1fr
+            }
+
+            .process-inner {
+                grid-template-columns: 1fr 1fr
+            }
+
+            .proc-item {
+                border-right: none;
+                border-bottom: 1px solid var(--border)
+            }
+
+            footer {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center
+            }
+        }
+
+        @media(max-width:600px) {
+            nav {
+                padding: 1.2rem 1.5rem
+            }
+
+            .hero {
+                padding-top: 4rem;
+                padding-bottom: 3rem
+            }
+
+            .stats-row {
+                gap: 2rem
+            }
+
+            .process-inner {
+                grid-template-columns: 1fr
+            }
+
+            .proc-item:last-child {
+                border-bottom: none
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="cursor-dot" id="cd"></div>
+
+    <div class="cursor-ring" id="cr"></div>
+
+    <div class="page">
+
+        <nav>
+
+            <div class="logo-wrap">
+
+                <span class="logo-name">FairScan</span>
+
+                <span class="logo-badge">v1.0</span>
+
+            </div>
+
+            <div class="nav-pill">
+
+                <div class="pulse"></div>
+
+                System Online
+
+            </div>
+
+        </nav>
+
+        <section class="hero">
+
+            <div class="eyebrow">AI Bias Detection &amp; Remediation Platform</div>
+
+            <h1 class="headline">Every dataset<br>deserves to be<br><em>fair.</em></h1>
+
+            <p class="hero-desc">FairScan finds hidden discrimination in your AI datasets, explains it in plain
+                language, and fixes it — automatically. No PhD required.</p>
+
+            <div class="stats-row">
+
+                <div>
+                    <div class="stat-val"><span id="s1">0</span><sup>K</sup></div>
+                    <div class="stat-lbl">Datasets Scanned</div>
+                </div>
+
+                <div>
+                    <div class="stat-val"><span id="s2">0</span><sup>%</sup></div>
+                    <div class="stat-lbl">Avg. Bias Reduced</div>
+                </div>
+
+                <div>
+                    <div class="stat-val"><span id="s3">0</span></div>
+                    <div class="stat-lbl">Audit Reports</div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="industry">
+
+            <div class="sec-meta"><span class="sec-num">01</span><span class="sec-tag">Choose your sector</span></div>
+
+            <h2 class="sec-h2">Where do you work?</h2>
+
+            <p class="sec-p">FairScan tailors its analysis and recommendations to your specific industry context.</p>
+
+            <div class="cards-wrap">
+
+                <a class="card c1" href="upload.html?industry=hr" onclick="setIndustry('hr')">
+
+                    <div class="card-ico">👩‍💼</div>
+
+                    <div class="card-h3">Human Resources</div>
+
+                    <p class="card-p">Detect gender, age, and ethnicity bias in hiring algorithms that quietly filter
+                        qualified candidates before a human ever reads their CV.</p>
+
+                    <div class="tags"><span class="chip">GENDER BIAS</span><span class="chip">AGE BIAS</span><span
+                            class="chip">HIRING FAIRNESS</span></div>
+
+                    <div class="card-foot"><span class="card-cta-lbl">Start analysis</span><span
+                            class="card-arrow">→</span></div>
+
+                </a>
+
+                <a class="card c2" href="upload.html?industry=finance" onclick="setIndustry('finance')">
+
+                    <div class="card-ico">💳</div>
+
+                    <div class="card-h3">Finance &amp; Loans</div>
+
+                    <p class="card-p">Uncover discriminatory patterns in loan approval models that disproportionately
+                        reject minority or low-income applicants through proxy variables.</p>
+
+                    <div class="tags"><span class="chip">LOAN FAIRNESS</span><span class="chip">CREDIT BIAS</span><span
+                            class="chip">INCOME DISPARITY</span></div>
+
+                    <div class="card-foot"><span class="card-cta-lbl">Start analysis</span><span
+                            class="card-arrow">→</span></div>
+
+                </a>
+
+                <a class="card c3" href="upload.html?industry=healthcare" onclick="setIndustry('healthcare')">
+
+                    <div class="card-ico">🏥</div>
+
+                    <div class="card-h3">Healthcare</div>
+
+                    <p class="card-p">Identify unfair treatment recommendations in medical AI that deliver different
+                        care quality based on race, gender, or socioeconomic status.</p>
+
+                    <div class="tags"><span class="chip">RACIAL BIAS</span><span class="chip">TREATMENT
+                            EQUITY</span><span class="chip">LOCATION BIAS</span></div>
+
+                    <div class="card-foot"><span class="card-cta-lbl">Start analysis</span><span
+                            class="card-arrow">→</span></div>
+
+                </a>
+
+            </div>
+
+        </section>
+
+        <div class="process">
+
+            <div class="process-inner">
+
+                <div class="proc-item"><span class="proc-step">STEP 01</span><span class="proc-icon">📂</span>
+                    <div class="proc-name">Upload</div>
+                    <p class="proc-desc">Drop your CSV. We validate and parse it in seconds.</p>
+                </div>
+
+                <div class="proc-item"><span class="proc-step">STEP 02</span><span class="proc-icon">📊</span>
+                    <div class="proc-name">Detect</div>
+                    <p class="proc-desc">Bias scores computed across every demographic axis.</p>
+                </div>
+
+                <div class="proc-item"><span class="proc-step">STEP 03</span><span class="proc-icon">🧠</span>
+                    <div class="proc-name">Explain</div>
+                    <p class="proc-desc">AI turns numbers into plain, readable language.</p>
+                </div>
+
+                <div class="proc-item"><span class="proc-step">STEP 04</span><span class="proc-icon">🔧</span>
+                    <div class="proc-name">Fix</div>
+                    <p class="proc-desc">One click removes the most biased columns automatically.</p>
+                </div>
+
+                <div class="proc-item"><span class="proc-step">STEP 05</span><span class="proc-icon">📄</span>
+                    <div class="proc-name">Report</div>
+                    <p class="proc-desc">Download a PDF audit trail for your stakeholders.</p>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="quote-wrap">
+
+            <span class="quote-mark">"</span>
+
+            <p class="quote-body">Biased AI doesn't announce itself — it hides in data,<br>making <strong>unfair
+                    decisions</strong> look like objective ones.<br>FairScan makes the invisible, visible.</p>
+
+            <div class="quote-attr">— FAIRSCAN MISSION STATEMENT</div>
+
+        </div>
+
+        <footer>
+
+            <div class="foot-logo">FairScan</div>
+
+            <div class="foot-copy">AI Bias Detection · Built by KKK</div>
+
+        </footer>
+
+    </div>
+
+    <script>
+
+        const cd = document.getElementById('cd'), cr = document.getElementById('cr');
+
+        let mx = 0, my = 0, rx = 0, ry = 0;
+
+        document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+
+        (function loop() { cd.style.left = mx + 'px'; cd.style.top = my + 'px'; rx += (mx - rx) * .13; ry += (my - ry) * .13; cr.style.left = rx + 'px'; cr.style.top = ry + 'px'; requestAnimationFrame(loop); })();
+
+        function count(el, end, dur = 1800) { let v = 0; const step = end / (dur / 16); const t = setInterval(() => { v = Math.min(v + step, end); el.textContent = Math.floor(v); if (v >= end) clearInterval(t); }, 16); }
+
+        const ob = new IntersectionObserver(ens => { ens.forEach(e => { if (e.isIntersecting) { count(document.getElementById('s1'), 12); count(document.getElementById('s2'), 73); count(document.getElementById('s3'), 892); ob.disconnect(); } }); }, { threshold: .3 });
+
+        ob.observe(document.querySelector('.stats-row'));
+
+        function setIndustry(i) { localStorage.setItem('fairscan_industry', i); }
+
+    </script>
+
+</body>
+
+</html>

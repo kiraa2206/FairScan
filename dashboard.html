@@ -1,0 +1,1237 @@
+<!--dashboard.html-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FairScan — Bias Dashboard</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0e0e0f;
+      --bg2: #141416;
+      --surface: #1a1a1d;
+      --surface2: #202025;
+      --border: rgba(255, 255, 255, .07);
+      --border2: rgba(255, 255, 255, .13);
+      --electric: #e8ff47;
+      --coral: #ff5c5c;
+      --sky: #5ce4ff;
+      --mint: #4fffb0;
+      --lavender: #c084fc;
+      --text: #f0ede8;
+      --text2: #9d9a94;
+      --text3: #5a5754
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    html {
+      scroll-behavior: smooth
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      cursor: none
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1;
+      opacity: .6
+    }
+
+    .page {
+      position: relative;
+      z-index: 2
+    }
+
+    .cursor-dot {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      background: var(--electric);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 14px var(--electric)
+    }
+
+    .cursor-ring {
+      position: fixed;
+      width: 34px;
+      height: 34px;
+      border: 1.5px solid rgba(232, 255, 71, .35);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: transform .08s
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.8rem 4rem;
+      background: rgba(14, 14, 15, .88);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100
+    }
+
+    .logo-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: .4rem;
+      text-decoration: none
+    }
+
+    .logo-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.55rem;
+      font-weight: 900;
+      font-style: italic;
+      color: var(--text);
+      letter-spacing: -.02em
+    }
+
+    .logo-badge {
+      font-family: 'DM Mono', monospace;
+      font-size: .72rem;
+      color: var(--electric);
+      background: rgba(232, 255, 71, .08);
+      border: 1px solid rgba(232, 255, 71, .22);
+      padding: .2rem .5rem;
+      letter-spacing: .1em
+    }
+
+    .breadcrumb {
+      font-family: 'DM Mono', monospace;
+      font-size: .72rem;
+      color: var(--text3);
+      display: flex;
+      align-items: center;
+      gap: .6rem
+    }
+
+    .breadcrumb .sep {
+      color: var(--electric)
+    }
+
+    .breadcrumb .cur {
+      color: var(--text2)
+    }
+
+    .nav-back {
+      font-family: 'DM Mono', monospace;
+      font-size: .72rem;
+      color: var(--text3);
+      text-decoration: none;
+      border: 1px solid var(--border2);
+      padding: .4rem .9rem;
+      transition: color .2s, border-color .2s
+    }
+
+    .nav-back:hover {
+      color: var(--electric);
+      border-color: rgba(232, 255, 71, .4)
+    }
+
+    .main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 4rem 2rem 7rem
+    }
+
+    .page-header {
+      margin-bottom: 3rem
+    }
+
+    .ph-meta {
+      display: flex;
+      align-items: center;
+      gap: .8rem;
+      font-family: 'DM Mono', monospace;
+      font-size: .7rem;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      margin-bottom: 1rem
+    }
+
+    .ph-num {
+      color: var(--electric);
+      border: 1px solid rgba(232, 255, 71, .28);
+      padding: .2rem .5rem
+    }
+
+    .ph-h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 900;
+      letter-spacing: -.03em;
+      color: var(--text);
+      line-height: 1.05;
+      margin-bottom: .6rem
+    }
+
+    .ph-h1 em {
+      font-style: italic;
+      color: var(--electric)
+    }
+
+    .ph-sub {
+      font-size: .95rem;
+      color: var(--text3);
+      font-family: 'DM Mono', monospace;
+      letter-spacing: .04em
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 5rem 2rem;
+      border: 1.5px dashed var(--border2);
+      background: var(--surface)
+    }
+
+    .no-data-icon {
+      font-size: 3rem;
+      display: block;
+      margin-bottom: 1.2rem;
+      opacity: .5
+    }
+
+    .no-data-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-style: italic;
+      color: var(--text);
+      margin-bottom: .6rem
+    }
+
+    .no-data-sub {
+      font-size: .9rem;
+      color: var(--text3);
+      margin-bottom: 2rem
+    }
+
+    .go-upload {
+      display: inline-block;
+      border: 1.5px solid var(--electric);
+      color: var(--electric);
+      font-family: 'DM Mono', monospace;
+      font-size: .78rem;
+      letter-spacing: .12em;
+      padding: .8rem 2rem;
+      text-decoration: none;
+      transition: background .2s, box-shadow .2s
+    }
+
+    .go-upload:hover {
+      background: rgba(232, 255, 71, .09);
+      box-shadow: 0 0 22px rgba(232, 255, 71, .25)
+    }
+
+    .summary-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 2.5rem
+    }
+
+    .sum-cell {
+      background: var(--surface);
+      padding: 1.4rem 1.8rem
+    }
+
+    .sum-label {
+      font-family: 'DM Mono', monospace;
+      font-size: .65rem;
+      color: var(--text3);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-bottom: .5rem;
+      display: block
+    }
+
+    .sum-val {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -.02em;
+      color: var(--text);
+      line-height: 1
+    }
+
+    .sum-val.electric {
+      color: var(--electric)
+    }
+
+    .sum-val.mint {
+      color: var(--mint)
+    }
+
+    .sum-val.coral {
+      color: var(--coral)
+    }
+
+    .sum-val.sky {
+      color: var(--sky)
+    }
+
+    .sec-title {
+      font-family: 'DM Mono', monospace;
+      font-size: .72rem;
+      color: var(--text3);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: .8rem;
+      margin-bottom: 1.4rem
+    }
+
+    .sec-title::before {
+      content: '';
+      display: block;
+      width: 18px;
+      height: 1px;
+      background: var(--electric);
+      box-shadow: 0 0 6px var(--electric)
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2.5rem
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      padding: 1.8rem;
+      position: relative
+    }
+
+    .chart-card-title {
+      font-family: 'DM Mono', monospace;
+      font-size: .72rem;
+      color: var(--text2);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-bottom: 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem
+    }
+
+    .chart-card canvas {
+      width: 100% !important
+    }
+
+    .gauge-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      padding: 1.8rem;
+      margin-bottom: 2.5rem
+    }
+
+    .gauge-wrap {
+      display: flex;
+      align-items: center;
+      gap: 3rem;
+      flex-wrap: wrap
+    }
+
+    .gauge-canvas-wrap {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      flex-shrink: 0;
+      margin: 0 auto
+    }
+
+    .gauge-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none
+    }
+
+    .gauge-pct {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.8rem;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -.04em
+    }
+
+    .gauge-lbl {
+      font-family: 'DM Mono', monospace;
+      font-size: .6rem;
+      color: var(--text3);
+      letter-spacing: .12em;
+      margin-top: .3rem
+    }
+
+    .gauge-legend {
+      flex: 1;
+      min-width: 220px
+    }
+
+    .gauge-legend-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: .7rem 0;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .gauge-legend-row:last-child {
+      border-bottom: none
+    }
+
+    .gl-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0
+    }
+
+    .gl-range {
+      font-family: 'DM Mono', monospace;
+      font-size: .7rem;
+      color: var(--text3);
+      letter-spacing: .06em;
+      flex: 1
+    }
+
+    .gl-label {
+      font-size: .85rem;
+      color: var(--text2);
+      font-weight: 500
+    }
+
+    .risk-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      font-family: 'DM Mono', monospace;
+      font-size: .8rem;
+      letter-spacing: .1em;
+      padding: .5rem 1.2rem;
+      border: 1.5px solid;
+      margin-top: .8rem
+    }
+
+    .risk-low {
+      color: var(--mint);
+      border-color: rgba(79, 255, 176, .4);
+      background: rgba(79, 255, 176, .06)
+    }
+
+    .risk-medium {
+      color: var(--electric);
+      border-color: rgba(232, 255, 71, .4);
+      background: rgba(232, 255, 71, .06)
+    }
+
+    .risk-high {
+      color: var(--coral);
+      border-color: rgba(255, 92, 92, .4);
+      background: rgba(255, 92, 92, .06)
+    }
+
+    .meters-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      margin-bottom: 2.5rem
+    }
+
+    .meter {
+      background: var(--surface);
+      padding: 1.6rem 1.4rem
+    }
+
+    .meter-key {
+      font-family: 'DM Mono', monospace;
+      font-size: .62rem;
+      color: var(--text3);
+      letter-spacing: .08em;
+      margin-bottom: .6rem;
+      display: block;
+      text-transform: uppercase
+    }
+
+    .meter-val {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: .7rem;
+      letter-spacing: -.02em
+    }
+
+    .meter-track {
+      height: 3px;
+      background: var(--border2)
+    }
+
+    .meter-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 1.6s cubic-bezier(.25, .46, .45, .94)
+    }
+
+    .ai-panel {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      margin-bottom: 2.5rem;
+      overflow: hidden
+    }
+
+    .ai-panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.2rem 1.8rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(232, 255, 71, .03)
+    }
+
+    .ai-panel-title {
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+      font-family: 'DM Mono', monospace;
+      font-size: .75rem;
+      color: var(--electric);
+      letter-spacing: .1em;
+      text-transform: uppercase
+    }
+
+    .ai-spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(232, 255, 71, .2);
+      border-top-color: var(--electric);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      display: none
+    }
+
+    .ai-spinner.active {
+      display: block
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    .regenerate-btn {
+      background: transparent;
+      border: 1px solid var(--border2);
+      color: var(--text3);
+      font-family: 'DM Mono', monospace;
+      font-size: .68rem;
+      letter-spacing: .08em;
+      padding: .35rem .85rem;
+      cursor: pointer;
+      transition: color .2s, border-color .2s
+    }
+
+    .regenerate-btn:hover {
+      color: var(--electric);
+      border-color: rgba(232, 255, 71, .4)
+    }
+
+    .ai-body {
+      padding: 2rem 1.8rem
+    }
+
+    .ai-loading {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      color: var(--text3);
+      font-family: 'DM Mono', monospace;
+      font-size: .82rem;
+      letter-spacing: .06em
+    }
+
+    .ai-loading-spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(92, 228, 255, .2);
+      border-top-color: var(--sky);
+      border-radius: 50%;
+      animation: spin .8s linear infinite
+    }
+
+    .ai-content {
+      display: none
+    }
+
+    .ai-content.show {
+      display: block
+    }
+
+    .ai-insight {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+      padding: 1rem 1.2rem;
+      background: rgba(255, 255, 255, .02);
+      border-left: 2px solid var(--electric)
+    }
+
+    .ai-insight-icon {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+      margin-top: .1rem
+    }
+
+    .ai-insight-text {
+      font-size: .95rem;
+      color: var(--text2);
+      line-height: 1.75;
+      font-weight: 300
+    }
+
+    .ai-insight-text strong {
+      color: var(--text);
+      font-weight: 600
+    }
+
+    .ai-tip {
+      display: flex;
+      gap: .8rem;
+      padding: .8rem 1rem;
+      border: 1px solid rgba(79, 255, 176, .15);
+      background: rgba(79, 255, 176, .03);
+      margin-bottom: .7rem
+    }
+
+    .ai-tip-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--mint);
+      box-shadow: 0 0 6px var(--mint);
+      flex-shrink: 0;
+      margin-top: .45rem
+    }
+
+    .ai-tip-text {
+      font-size: .88rem;
+      color: var(--text3);
+      line-height: 1.65
+    }
+
+    .ai-tip-text strong {
+      color: var(--mint)
+    }
+
+    .ai-error {
+      color: var(--coral);
+      font-family: 'DM Mono', monospace;
+      font-size: .82rem;
+      letter-spacing: .04em;
+      padding: 1rem;
+      border: 1px solid rgba(255, 92, 92, .2);
+      background: rgba(255, 92, 92, .04);
+      display: none
+    }
+
+    .ai-error.show {
+      display: block
+    }
+
+    .insight-col-title {
+      font-family: 'DM Mono', monospace;
+      font-size: .68rem;
+      color: var(--text3);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-bottom: .7rem
+    }
+
+    .why-panel {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      margin-bottom: 2.5rem;
+      overflow: hidden
+    }
+
+    .why-panel-head {
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+      padding: 1.2rem 1.8rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(92, 228, 255, .03);
+      font-family: 'DM Mono', monospace;
+      font-size: .75rem;
+      color: var(--sky);
+      letter-spacing: .1em;
+      text-transform: uppercase
+    }
+
+    .why-body {
+      padding: 1.8rem
+    }
+
+    .col-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.6rem
+    }
+
+    .col-card {
+      border: 1px solid var(--border2);
+      background: var(--bg);
+      padding: 1.2rem 1.4rem;
+      position: relative;
+      overflow: hidden
+    }
+
+    .col-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--cc)
+    }
+
+    .col-card-name {
+      font-family: 'DM Mono', monospace;
+      font-size: .75rem;
+      color: var(--text2);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: .5rem
+    }
+
+    .col-card-score {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -.03em;
+      margin-bottom: .5rem
+    }
+
+    .col-card-bar-wrap {
+      height: 3px;
+      background: var(--border2);
+      margin-bottom: .7rem
+    }
+
+    .col-card-bar {
+      height: 100%;
+      background: var(--cc);
+      transition: width 1.4s cubic-bezier(.25, .46, .45, .94);
+      width: 0%
+    }
+
+    .col-card-explain {
+      font-size: .82rem;
+      color: var(--text3);
+      line-height: 1.6;
+      font-weight: 300
+    }
+
+    .col-card-explain strong {
+      color: var(--text2)
+    }
+
+    .real-impact {
+      background: rgba(255, 92, 92, .04);
+      border: 1px solid rgba(255, 92, 92, .15);
+      padding: 1.2rem 1.4rem;
+      margin-bottom: 1.2rem
+    }
+
+    .real-impact-title {
+      font-family: 'DM Mono', monospace;
+      font-size: .68rem;
+      color: var(--coral);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-bottom: .8rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem
+    }
+
+    .real-impact-row {
+      display: flex;
+      align-items: flex-start;
+      gap: .8rem;
+      margin-bottom: .6rem
+    }
+
+    .real-impact-row:last-child {
+      margin-bottom: 0
+    }
+
+    .ri-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+      margin-top: .1rem
+    }
+
+    .ri-text {
+      font-size: .88rem;
+      color: var(--text2);
+      line-height: 1.6
+    }
+
+    .ri-text strong {
+      color: var(--coral)
+    }
+
+    .no-cols-msg {
+      text-align: center;
+      padding: 2rem;
+      font-family: 'DM Mono', monospace;
+      font-size: .8rem;
+      color: var(--text3);
+      letter-spacing: .06em
+    }
+
+    .actions-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border)
+    }
+
+    .act-btn {
+      background: var(--surface);
+      border: none;
+      padding: 1.2rem;
+      font-family: 'DM Mono', monospace;
+      font-size: .75rem;
+      letter-spacing: .1em;
+      cursor: pointer;
+      transition: background .2s, color .2s;
+      text-align: center
+    }
+
+    .act-icon {
+      display: block;
+      font-size: 1.3rem;
+      margin-bottom: .4rem
+    }
+
+    .ab1 {
+      color: var(--lavender)
+    }
+
+    .ab2 {
+      color: var(--mint)
+    }
+
+    .ab3 {
+      color: var(--coral)
+    }
+
+    .ab1:hover {
+      background: rgba(192, 132, 252, .08)
+    }
+
+    .ab2:hover {
+      background: rgba(79, 255, 176, .08)
+    }
+
+    .ab3:hover {
+      background: rgba(255, 92, 92, .08)
+    }
+
+    @media(max-width:800px) {
+      nav {
+        padding: 1.2rem 1.5rem
+      }
+
+      .main {
+        padding: 2.5rem 1.2rem 5rem
+      }
+
+      .summary-bar {
+        grid-template-columns: 1fr 1fr
+      }
+
+      .charts-grid {
+        grid-template-columns: 1fr
+      }
+
+      .meters-grid {
+        grid-template-columns: 1fr 1fr
+      }
+
+      .actions-bar {
+        grid-template-columns: 1fr
+      }
+    }
+
+    @media(max-width:480px) {
+      .summary-bar {
+        grid-template-columns: 1fr
+      }
+
+      .meters-grid {
+        grid-template-columns: 1fr
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="cursor-dot" id="cd"></div>
+  <div class="cursor-ring" id="cr"></div>
+  <div class="page">
+    <nav>
+      <a class="logo-wrap" href="index.html">
+        <span class="logo-name">FairScan</span>
+        <span class="logo-badge">v1.0</span>
+      </a>
+      <div class="breadcrumb">
+        <span>Home</span><span class="sep">›</span>
+        <span>Upload</span><span class="sep">›</span>
+        <span class="cur">Bias Dashboard</span>
+      </div>
+      <a class="nav-back" href="upload.html">← Re-upload</a>
+    </nav>
+    <div class="main" id="main-content">
+      <div class="page-header">
+        <div class="ph-meta"><span class="ph-num">03</span><span>Bias Analysis Dashboard</span></div>
+        <h1 class="ph-h1">Your dataset's<br><em>fairness report</em></h1>
+        <p class="ph-sub">// ai-powered bias detection &amp; plain-language explanation</p>
+      </div>
+      <div class="no-data" id="no-data-state" style="display:none;">
+        <span class="no-data-icon">📂</span>
+        <div class="no-data-title">No dataset found</div>
+        <p class="no-data-sub">Please upload a CSV file first to see your bias report.</p>
+        <a class="go-upload" href="upload.html">← Go to Upload</a>
+      </div>
+      <div id="dashboard-content" style="display:none;">
+        <div class="summary-bar">
+          <div class="sum-cell"><span class="sum-label">File</span>
+            <div class="sum-val sky" id="s-file" style="font-size:1rem;padding-top:.4rem;">—</div>
+          </div>
+          <div class="sum-cell"><span class="sum-label">Total Rows</span>
+            <div class="sum-val" id="s-rows">—</div>
+          </div>
+          <div class="sum-cell"><span class="sum-label">Overall Bias Score</span>
+            <div class="sum-val coral" id="s-ov">—</div>
+          </div>
+          <div class="sum-cell"><span class="sum-label">Fairness Grade</span>
+            <div class="sum-val electric" id="s-grade">—</div>
+          </div>
+        </div>
+        <div class="sec-title">Individual Bias Metrics</div>
+        <div class="meters-grid">
+          <div class="meter"><span class="meter-key">Gender Bias</span>
+            <div class="meter-val" id="mv1" style="color:var(--coral)">0%</div>
+            <div class="meter-track">
+              <div class="meter-fill" id="mf1" style="background:var(--coral)"></div>
+            </div>
+          </div>
+          <div class="meter"><span class="meter-key">Age Bias</span>
+            <div class="meter-val" id="mv2" style="color:var(--lavender)">0%</div>
+            <div class="meter-track">
+              <div class="meter-fill" id="mf2" style="background:var(--lavender)"></div>
+            </div>
+          </div>
+          <div class="meter"><span class="meter-key">Location Bias</span>
+            <div class="meter-val" id="mv3" style="color:var(--sky)">0%</div>
+            <div class="meter-track">
+              <div class="meter-fill" id="mf3" style="background:var(--sky)"></div>
+            </div>
+          </div>
+          <div class="meter"><span class="meter-key">Overall Impact</span>
+            <div class="meter-val" id="mv4" style="color:var(--electric)">0%</div>
+            <div class="meter-track">
+              <div class="meter-fill" id="mf4" style="background:var(--electric)"></div>
+            </div>
+          </div>
+        </div>
+        <div class="sec-title">Visual Breakdown</div>
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-card-title">📊 Bias Score by Category</div><canvas id="barChart" height="230"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">🥧 Sensitive Columns Detected</div><canvas id="pieChart"
+              height="230"></canvas>
+          </div>
+        </div>
+        <div class="gauge-card">
+          <div class="chart-card-title" style="margin-bottom:1.6rem;">⚠️ Overall Bias Risk Gauge</div>
+          <div class="gauge-wrap">
+            <div class="gauge-canvas-wrap">
+              <canvas id="gaugeChart"></canvas>
+              <div class="gauge-center">
+                <div class="gauge-pct" id="gauge-pct-text">0%</div>
+                <div class="gauge-lbl">RISK SCORE</div>
+              </div>
+            </div>
+            <div class="gauge-legend">
+              <div class="gauge-legend-row">
+                <div class="gl-dot" style="background:var(--mint);"></div>
+                <div class="gl-range">0 – 30%</div>
+                <div class="gl-label">🟢 Low Risk</div>
+              </div>
+              <div class="gauge-legend-row">
+                <div class="gl-dot" style="background:var(--electric);"></div>
+                <div class="gl-range">30 – 70%</div>
+                <div class="gl-label">🟡 Medium Risk</div>
+              </div>
+              <div class="gauge-legend-row">
+                <div class="gl-dot" style="background:var(--coral);"></div>
+                <div class="gl-range">70 – 100%</div>
+                <div class="gl-label">🔴 High Risk</div>
+              </div>
+              <div style="margin-top:1.2rem;">
+                <div class="risk-badge" id="risk-badge">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="sec-title">AI-Powered Plain English Explanation</div>
+        <div class="ai-panel">
+          <div class="ai-panel-head">
+            <div class="ai-panel-title"><span>🧠</span><span>Gemini AI Analysis</span>
+              <div class="ai-spinner" id="ai-spinner"></div>
+            </div>
+            <button class="regenerate-btn" onclick="fetchGeminiExplanation()">↻ Regenerate</button>
+          </div>
+          <div class="ai-body">
+            <div class="ai-loading" id="ai-loading">
+              <div class="ai-loading-spinner"></div><span>Gemini is reading your bias scores...</span>
+            </div>
+            <div class="ai-error" id="ai-error"></div>
+            <div class="ai-content" id="ai-content"></div>
+          </div>
+        </div>
+        <div class="sec-title">Why Is This Biased? Column Deep-Dive</div>
+        <div class="why-panel">
+          <div class="why-panel-head"><span>🔬</span><span>Column-by-Column Bias Explanation</span></div>
+          <div class="why-body" id="why-body"></div>
+        </div>
+        <div class="actions-bar">
+          <button class="act-btn ab1" onclick="window.location.href='simulator.html'"><span
+              class="act-icon">🎯</span>OPEN SIMULATOR</button>
+          <button class="act-btn ab2" onclick="window.location.href='fix.html'"><span class="act-icon">🔧</span>FIX
+            BIAS</button>
+          <button class="act-btn ab3" onclick="window.location.href='upload.html'"><span class="act-icon">📂</span>NEW
+            DATASET</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const cd = document.getElementById('cd'), cr = document.getElementById('cr');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    (function loop() { cd.style.left = mx + 'px'; cd.style.top = my + 'px'; rx += (mx - rx) * .13; ry += (my - ry) * .13; cr.style.left = rx + 'px'; cr.style.top = ry + 'px'; requestAnimationFrame(loop); })();
+
+    // REPLACE WITH YOUR GEMINI API KEY from https://aistudio.google.com/app/apikey
+    const GEMINI_API_KEY = 'AIzaSyBKX_lD3WgY4Hg6RelEJzCb0KWcw5cvd2Y';
+
+    let D = null;
+
+    function loadData() {
+      const raw = localStorage.getItem('fairscan_results');
+      if (!raw) { document.getElementById('no-data-state').style.display = 'block'; document.getElementById('dashboard-content').style.display = 'none'; return false; }
+      try { D = JSON.parse(raw); document.getElementById('no-data-state').style.display = 'none'; document.getElementById('dashboard-content').style.display = 'block'; return true; }
+      catch (e) { document.getElementById('no-data-state').style.display = 'block'; return false; }
+    }
+
+    function populateSummary() {
+      document.getElementById('s-file').textContent = D.filename || 'dataset.csv';
+      document.getElementById('s-rows').textContent = (D.rows || 0).toLocaleString();
+      document.getElementById('s-ov').textContent = (D.ov || 0) + '%';
+      document.getElementById('s-grade').textContent = D.grade || '—';
+    }
+
+    function populateMeters() {
+      function setMeter(vi, fi, v) { document.getElementById(vi).textContent = v + '%'; setTimeout(() => { document.getElementById(fi).style.width = v + '%'; }, 100); }
+      setMeter('mv1', 'mf1', D.gb || 0); setMeter('mv2', 'mf2', D.ab || 0); setMeter('mv3', 'mf3', D.lb || 0); setMeter('mv4', 'mf4', D.ov || 0);
+    }
+
+    Chart.defaults.color = '#5a5754';
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.07)';
+
+    function drawBarChart() {
+      const ctx = document.getElementById('barChart').getContext('2d');
+      new Chart(ctx, { type: 'bar', data: { labels: ['Gender Bias', 'Age Bias', 'Location Bias', 'Overall Impact'], datasets: [{ label: 'Bias Score (%)', data: [D.gb || 0, D.ab || 0, D.lb || 0, D.ov || 0], backgroundColor: ['rgba(255,92,92,0.7)', 'rgba(192,132,252,0.7)', 'rgba(92,228,255,0.7)', 'rgba(232,255,71,0.7)'], borderColor: ['rgba(255,92,92,1)', 'rgba(192,132,252,1)', 'rgba(92,228,255,1)', 'rgba(232,255,71,1)'], borderWidth: 1, borderRadius: 2 }] }, options: { responsive: true, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a1a1d', borderColor: 'rgba(255,255,255,0.13)', borderWidth: 1, titleFont: { family: 'DM Mono' }, bodyFont: { family: 'DM Mono' }, callbacks: { label: ctx => ' ' + ctx.parsed.y + '% bias detected' } } }, scales: { x: { ticks: { font: { family: 'DM Mono', size: 10 }, color: '#5a5754' }, grid: { color: 'rgba(255,255,255,0.05)' } }, y: { min: 0, max: 100, ticks: { font: { family: 'DM Mono', size: 10 }, color: '#5a5754', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } } } } });
+    }
+
+    function drawPieChart() {
+      const ctx = document.getElementById('pieChart').getContext('2d');
+      const found = D.found || [];
+      const all = ['gender', 'age', 'location', 'income', 'education', 'race'];
+      const detectedLabels = found.map(f => f.toUpperCase());
+      const undetectedCount = Math.max(0, all.length - found.length);
+      const labels = [...detectedLabels, 'NOT DETECTED'];
+      const values = [...found.map(() => 1), undetectedCount];
+      const colors = ['rgba(255,92,92,0.8)', 'rgba(192,132,252,0.8)', 'rgba(92,228,255,0.8)', 'rgba(232,255,71,0.8)', 'rgba(79,255,176,0.8)', 'rgba(255,165,0,0.8)', 'rgba(90,87,84,0.4)'];
+      new Chart(ctx, { type: 'doughnut', data: { labels, datasets: [{ data: values, backgroundColor: colors.slice(0, labels.length), borderColor: '#1a1a1d', borderWidth: 3, hoverBorderWidth: 1 }] }, options: { responsive: true, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { font: { family: 'DM Mono', size: 10 }, color: '#9d9a94', padding: 14, boxWidth: 10 } }, tooltip: { backgroundColor: '#1a1a1d', borderColor: 'rgba(255,255,255,0.13)', borderWidth: 1, titleFont: { family: 'DM Mono' }, bodyFont: { family: 'DM Mono' } } } } });
+    }
+
+    function drawGauge() {
+      const ctx = document.getElementById('gaugeChart').getContext('2d');
+      const score = D.ov || 0;
+      let gaugeColor, riskClass, riskLabel;
+      if (score < 30) { gaugeColor = '#4fffb0'; riskClass = 'risk-low'; riskLabel = '🟢 LOW RISK'; }
+      else if (score < 70) { gaugeColor = '#e8ff47'; riskClass = 'risk-medium'; riskLabel = '🟡 MEDIUM RISK'; }
+      else { gaugeColor = '#ff5c5c'; riskClass = 'risk-high'; riskLabel = '🔴 HIGH RISK'; }
+      const badge = document.getElementById('risk-badge');
+      badge.textContent = riskLabel; badge.className = 'risk-badge ' + riskClass;
+      let current = 0;
+      const interval = setInterval(() => { current = Math.min(current + 1, score); document.getElementById('gauge-pct-text').textContent = current + '%'; document.getElementById('gauge-pct-text').style.color = gaugeColor; if (current >= score) clearInterval(interval); }, 20);
+      new Chart(ctx, { type: 'doughnut', data: { datasets: [{ data: [score, 100 - score, 100], backgroundColor: [gaugeColor, 'rgba(255,255,255,0.06)', 'transparent'], borderWidth: 0, borderRadius: 2, circumference: 180, rotation: 270 }] }, options: { responsive: true, cutout: '72%', plugins: { legend: { display: false }, tooltip: { enabled: false } } } });
+    }
+
+    async function fetchGeminiExplanation() {
+      const spinner = document.getElementById('ai-spinner');
+      const loading = document.getElementById('ai-loading');
+      const content = document.getElementById('ai-content');
+      const errorBox = document.getElementById('ai-error');
+      spinner.classList.add('active');
+      loading.style.display = 'flex';
+      content.classList.remove('show');
+      errorBox.classList.remove('show');
+      const industryMap = { hr: 'HR & Recruitment', finance: 'Finance & Loans', healthcare: 'Healthcare' };
+      const industryLabel = industryMap[D.industry] || 'General';
+      const prompt = `You are a bias detection expert explaining AI fairness results to a non-technical business user.\n\nDataset Analysis Results:\n- Industry: ${industryLabel}\n- File: ${D.filename || 'dataset.csv'}\n- Total Rows: ${D.rows || 0}\n- Fairness Grade: ${D.grade || 'N/A'}\n- Gender Bias Score: ${D.gb || 0}%\n- Age Bias Score: ${D.ab || 0}%\n- Location Bias Score: ${D.lb || 0}%\n- Overall Bias Impact Score: ${D.ov || 0}%\n- Sensitive columns detected: ${(D.found || []).join(', ') || 'none'}\n\nPlease provide:\n1. A MAIN INSIGHT (2-3 sentences): Explain in very simple English what these numbers mean for real people. Mention specific numbers.\n2. WHAT CAUSED THIS BIAS (1-2 sentences): Which detected column is causing the most concern and why.\n3. THREE ETHICAL TIPS: Give 3 short, actionable suggestions to reduce this bias (each under 20 words).\n\nFormat EXACTLY like this:\nMAIN_INSIGHT: [your text here]\nCAUSE: [your text here]\nTIP1: [tip here]\nTIP2: [tip here]\nTIP3: [tip here]`;
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, maxOutputTokens: 600 } }) });
+        if (!response.ok) { const err = await response.json(); throw new Error(err.error?.message || 'API request failed'); }
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        if (!text) throw new Error('Empty response from Gemini');
+        const get = (key) => { const match = text.match(new RegExp(key + ':\\s*(.+?)(?=\\n[A-Z_]+:|$)', 's')); return match ? match[1].trim() : ''; };
+        const mainInsight = get('MAIN_INSIGHT'); const cause = get('CAUSE'); const tip1 = get('TIP1'); const tip2 = get('TIP2'); const tip3 = get('TIP3');
+        content.innerHTML = `<div class="ai-insight"><div class="ai-insight-icon">💡</div><div class="ai-insight-text">${mainInsight || 'Analysis complete. See scores above.'}</div></div>${cause ? `<div class="ai-insight" style="border-left-color:var(--coral);margin-bottom:1.6rem;"><div class="ai-insight-icon">🔍</div><div class="ai-insight-text"><strong>Root Cause:</strong> ${cause}</div></div>` : ''}<div class="insight-col-title">💡 How to Improve Fairness</div>${tip1 ? `<div class="ai-tip"><div class="ai-tip-dot"></div><div class="ai-tip-text">${tip1}</div></div>` : ''}${tip2 ? `<div class="ai-tip"><div class="ai-tip-dot"></div><div class="ai-tip-text">${tip2}</div></div>` : ''}${tip3 ? `<div class="ai-tip"><div class="ai-tip-dot"></div><div class="ai-tip-text">${tip3}</div></div>` : ''}`;
+        loading.style.display = 'none'; content.classList.add('show');
+      } catch (err) {
+        loading.style.display = 'none';
+        let friendlyMsg = '⚠️ Could not connect to Gemini API. ';
+        if (err.message.includes('API_KEY_INVALID') || err.message.includes('API key')) { friendlyMsg += 'Your API key seems invalid. Get a free key at https://aistudio.google.com/app/apikey and update it in dashboard.html.'; }
+        else if (err.message.includes('quota')) { friendlyMsg += 'API quota exceeded. Try again later.'; }
+        else { friendlyMsg += 'Error: ' + err.message; }
+        errorBox.textContent = friendlyMsg; errorBox.classList.add('show');
+        showFallbackExplanation();
+      } finally { spinner.classList.remove('active'); }
+    }
+
+    function showFallbackExplanation() {
+      const content = document.getElementById('ai-content');
+      const score = D.ov || 0; const grade = D.grade || 'N/A'; const found = D.found || [];
+      let mainText = '';
+      if (score < 20) mainText = `Your dataset scores ${score}% on overall bias — relatively low. It looks reasonably fair across the dimensions we checked.`;
+      else if (score < 50) mainText = `Your dataset has a ${score}% bias score (Grade ${grade}). Moderate fairness concerns exist. Certain groups may be treated differently.`;
+      else mainText = `Your dataset has a high bias score of ${score}% (Grade ${grade}). Serious concern — the data may cause unfair outcomes if used in automated decision systems.`;
+      const topBias = D.gb > D.ab && D.gb > D.lb ? 'gender' : D.ab > D.lb ? 'age' : 'location';
+      const topVal = topBias === 'gender' ? D.gb : topBias === 'age' ? D.ab : D.lb;
+      content.innerHTML = `<div class="ai-insight"><div class="ai-insight-icon">💡</div><div class="ai-insight-text">${mainText}</div></div><div class="ai-insight" style="border-left-color:var(--coral);margin-bottom:1.6rem;"><div class="ai-insight-icon">🔍</div><div class="ai-insight-text"><strong>Root Cause:</strong> The highest bias source appears to be <strong>${topBias}</strong>-related columns (${topVal}%). This column may be influencing outcomes in ways that disadvantage certain groups.</div></div><div class="insight-col-title">💡 How to Improve Fairness</div><div class="ai-tip"><div class="ai-tip-dot"></div><div class="ai-tip-text">Consider removing or anonymizing sensitive columns like <strong>${found.slice(0, 2).map(f => f.toUpperCase()).join(', ') || 'demographic fields'}</strong> before training any model.</div></div><div class="ai-tip"><div class="ai-tip-dot"></div><div class="ai-tip-text">Ensure your dataset has <strong>balanced representation</strong> across all demographic groups flagged above.</div></div><div class="ai-tip"><div class="ai-tip-dot"></div><div class="ai-tip-text">Use the <strong>Fix Bias</strong> tool below to automatically rebalance and recalculate your fairness score.</div></div><div style="margin-top:1rem;font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text3);letter-spacing:.06em;">// Fallback analysis (Gemini API unavailable)</div>`;
+      content.classList.add('show');
+    }
+
+    function buildWhyPanel() {
+      const body = document.getElementById('why-body');
+      let breakdown = D.breakdown || [];
+      if (breakdown.length === 0) {
+        const items = [];
+        if (D.gb > 0) items.push({ header: 'gender', type: 'gender', uniqueCount: 2, score: D.gb });
+        if (D.ab > 0) items.push({ header: 'age', type: 'age', uniqueCount: 5, score: D.ab });
+        if (D.lb > 0) items.push({ header: 'location', type: 'location', uniqueCount: 8, score: D.lb });
+        if (items.length === 0) { body.innerHTML = `<div class="no-cols-msg">// No sensitive columns detected in this dataset.</div>`; return; }
+        breakdown = [...items];
+      }
+      const explanations = {
+        gender: (score, unique) => `This column has <strong>${unique} gender categories</strong>. An imbalance score of <strong>${score}%</strong> means one gender appears significantly more often. When an AI learns from this, it associates certain outcomes with one gender over another.`,
+        age: (score, unique) => `Age data is split into <strong>${unique} distinct brackets</strong>. A score of <strong>${score}%</strong> means certain age groups dominate the dataset. AI models trained on this tend to favour the majority age group.`,
+        race: (score, unique) => `This column contains <strong>${unique} racial or ethnic categories</strong>. With a bias score of <strong>${score}%</strong>, some groups are heavily underrepresented. An AI will make less accurate — and often unfair — decisions for those groups.`,
+        location: (score, unique) => `<strong>${unique} unique locations</strong> appear in this column. A score of <strong>${score}%</strong> means certain cities or regions dominate. This can indirectly encode race, income, or education — a phenomenon called "proxy bias".`,
+        income: (score, unique) => `Income data shows <strong>${unique} distinct levels</strong> with a ${score}% imbalance. Higher-income entries dominate. AI systems learn that "normal" means higher-income, disadvantaging lower-income applicants.`,
+        education: (score, unique) => `<strong>${unique} education levels</strong> are present, with a ${score}% skew. This can unfairly filter out capable candidates who had fewer educational opportunities.`,
+      };
+      const impacts = {
+        gender: [{ icon: '👩', text: 'In a <strong>hiring system</strong>: female candidates may be ranked lower or filtered out before a human reviews their application.' }, { icon: '💰', text: 'In a <strong>loan system</strong>: women may receive lower credit limits or higher interest rates due to historical income gaps.' }],
+        age: [{ icon: '👴', text: 'In a <strong>hiring system</strong>: applicants over 45 may be automatically deprioritised, even with superior experience.' }, { icon: '🏥', text: 'In a <strong>healthcare system</strong>: treatment recommendations may be less accurate for elderly patients.' }],
+        race: [{ icon: '🏦', text: 'In a <strong>lending system</strong>: minority applicants may face higher rejection rates.' }, { icon: '⚖️', text: 'In a <strong>hiring system</strong>: names or zip codes that correlate with race can cause the AI to rank equally qualified candidates differently.' }],
+        location: [{ icon: '🗺️', text: 'In a <strong>loan system</strong>: applicants from certain zip codes may be denied — a digital form of "redlining".' }, { icon: '🏥', text: 'In a <strong>healthcare system</strong>: rural patients may receive less accurate diagnoses.' }],
+        income: [{ icon: '🎓', text: 'In an <strong>education system</strong>: lower-income students may be less likely to receive scholarship recommendations.' }, { icon: '🏠', text: 'In a <strong>housing system</strong>: income-based bias can legally act as a proxy for racial discrimination.' }],
+        education: [{ icon: '💼', text: 'In a <strong>hiring system</strong>: candidates without top university degrees may be filtered out even when skills match.' }, { icon: '💳', text: 'In a <strong>finance system</strong>: education level may be used to predict creditworthiness in ways that correlate with privilege.' }],
+      };
+      const colors = { gender: 'var(--coral)', age: 'var(--lavender)', race: 'var(--electric)', location: 'var(--sky)', income: 'var(--mint)', education: '#ff9f47' };
+      const sorted = [...breakdown].sort((a, b) => b.score - a.score);
+      const cardsHTML = sorted.map(col => {
+        const color = colors[col.type] || 'var(--text2)';
+        const explain = explanations[col.type] ? explanations[col.type](col.score, col.uniqueCount) : `This column has a bias score of <strong>${col.score}%</strong>, indicating imbalance that could affect AI decision-making.`;
+        const riskWord = col.score < 30 ? '🟢 Low' : col.score < 60 ? '🟡 Medium' : '🔴 High';
+        return `<div class="col-card" style="--cc:${color};"><div class="col-card-name">${col.header} <span style="color:${color};font-size:.6rem;margin-left:.4rem;">${riskWord} risk</span></div><div class="col-card-score" style="color:${color};">${col.score}%</div><div class="col-card-bar-wrap"><div class="col-card-bar" data-width="${col.score}" style="background:${color};"></div></div><div class="col-card-explain">${explain}</div></div>`;
+      }).join('');
+      const worstType = sorted[0]?.type || 'gender';
+      const impactRows = (impacts[worstType] || impacts.gender).map(i => `<div class="real-impact-row"><div class="ri-icon">${i.icon}</div><div class="ri-text">${i.text}</div></div>`).join('');
+      const industryMap = { hr: 'HR & Recruitment', finance: 'Finance & Loans', healthcare: 'Healthcare' };
+      const industryLabel = industryMap[D.industry] || 'your industry';
+      body.innerHTML = `<div style="margin-bottom:1.2rem;"><div style="font-size:.9rem;color:var(--text2);line-height:1.7;font-weight:300;">The columns below were detected as <strong style="color:var(--text);">sensitive demographic attributes</strong>. Each one can introduce bias into AI decisions in <strong style="color:var(--text);">${industryLabel}</strong>.</div></div><div class="col-cards">${cardsHTML}</div><div class="real-impact"><div class="real-impact-title"><span>⚠️</span><span>What this means for real people in ${industryLabel}</span></div>${impactRows}</div><div style="font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text3);letter-spacing:.06em;margin-top:.5rem;">// scroll down to use the Fix Bias tool to automatically remove the most biased columns</div>`;
+      setTimeout(() => { body.querySelectorAll('.col-card-bar').forEach(bar => { bar.style.width = bar.dataset.width + '%'; }); }, 100);
+    }
+
+    function init() {
+      const hasData = loadData();
+      if (!hasData) return;
+      populateSummary();
+      populateMeters();
+      setTimeout(() => { drawBarChart(); drawPieChart(); drawGauge(); }, 50);
+      buildWhyPanel();
+      fetchGeminiExplanation();
+    }
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+
+</html>

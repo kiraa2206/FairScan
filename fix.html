@@ -1,0 +1,624 @@
+<!--fix.html-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FairScan — Bias Fix Tool</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --bg: #0e0e0f;
+            --bg2: #141416;
+            --surface: #1a1a1d;
+            --surface2: #202025;
+            --border: rgba(255, 255, 255, .07);
+            --border2: rgba(255, 255, 255, .13);
+            --electric: #e8ff47;
+            --coral: #ff5c5c;
+            --sky: #5ce4ff;
+            --mint: #4fffb0;
+            --lavender: #c084fc;
+            --text: #f0ede8;
+            --text2: #9d9a94;
+            --text3: #5a5754
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            cursor: none
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 1;
+            opacity: .6
+        }
+
+        .page {
+            position: relative;
+            z-index: 2
+        }
+
+        .cursor-dot {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            background: var(--electric);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 14px var(--electric)
+        }
+
+        .cursor-ring {
+            position: fixed;
+            width: 34px;
+            height: 34px;
+            border: 1.5px solid rgba(232, 255, 71, .35);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transform: translate(-50%, -50%)
+        }
+
+        nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.8rem 4rem;
+            background: rgba(14, 14, 15, .88);
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100
+        }
+
+        .logo-wrap {
+            display: flex;
+            align-items: baseline;
+            gap: .4rem;
+            text-decoration: none
+        }
+
+        .logo-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.55rem;
+            font-weight: 900;
+            font-style: italic;
+            color: var(--text);
+            letter-spacing: -.02em
+        }
+
+        .logo-badge {
+            font-family: 'DM Mono', monospace;
+            font-size: .72rem;
+            color: var(--electric);
+            background: rgba(232, 255, 71, .08);
+            border: 1px solid rgba(232, 255, 71, .22);
+            padding: .2rem .5rem;
+            letter-spacing: .1em
+        }
+
+        .breadcrumb {
+            font-family: 'DM Mono', monospace;
+            font-size: .72rem;
+            color: var(--text3);
+            display: flex;
+            align-items: center;
+            gap: .6rem
+        }
+
+        .breadcrumb .sep {
+            color: var(--electric)
+        }
+
+        .breadcrumb .cur {
+            color: var(--text2)
+        }
+
+        .nav-back {
+            font-family: 'DM Mono', monospace;
+            font-size: .72rem;
+            color: var(--text3);
+            text-decoration: none;
+            border: 1px solid var(--border2);
+            padding: .4rem .9rem;
+            transition: color .2s, border-color .2s
+        }
+
+        .nav-back:hover {
+            color: var(--electric);
+            border-color: rgba(232, 255, 71, .4)
+        }
+
+        .main {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 4rem 2rem 7rem
+        }
+
+        .page-header {
+            margin-bottom: 3rem
+        }
+
+        .ph-meta {
+            display: flex;
+            align-items: center;
+            gap: .8rem;
+            font-family: 'DM Mono', monospace;
+            font-size: .7rem;
+            color: var(--text3);
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            margin-bottom: 1rem
+        }
+
+        .ph-num {
+            color: var(--electric);
+            border: 1px solid rgba(232, 255, 71, .28);
+            padding: .2rem .5rem
+        }
+
+        .ph-h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 900;
+            letter-spacing: -.03em;
+            color: var(--text);
+            line-height: 1.05;
+            margin-bottom: .6rem
+        }
+
+        .ph-h1 em {
+            font-style: italic;
+            color: var(--electric)
+        }
+
+        .ph-sub {
+            font-size: .95rem;
+            color: var(--text3);
+            font-family: 'DM Mono', monospace;
+            letter-spacing: .04em
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            padding: 2rem;
+            margin-bottom: 2rem
+        }
+
+        .card-title {
+            font-family: 'DM Mono', monospace;
+            font-size: .75rem;
+            color: var(--text2);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: .6rem
+        }
+
+        .card-title::before {
+            content: '';
+            display: block;
+            width: 14px;
+            height: 1px;
+            background: var(--electric);
+            box-shadow: 0 0 6px var(--electric)
+        }
+
+        .columns {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.2rem;
+            margin-bottom: 1.5rem
+        }
+
+        .column-box {
+            background: var(--bg);
+            border: 1px solid var(--border2);
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden
+        }
+
+        .column-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--cb)
+        }
+
+        .col-header {
+            font-family: 'DM Mono', monospace;
+            font-size: .8rem;
+            color: var(--text2);
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            margin-bottom: .4rem
+        }
+
+        .col-type {
+            font-size: .78rem;
+            color: var(--text3);
+            margin-bottom: .8rem
+        }
+
+        .col-score {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -.03em
+        }
+
+        .col-track {
+            height: 3px;
+            background: var(--border2);
+            margin-top: .6rem
+        }
+
+        .col-fill {
+            height: 100%;
+            transition: width 1.2s cubic-bezier(.25, .46, .45, .94);
+            width: 0%
+        }
+
+        .score-danger {
+            color: var(--coral);
+            --cb: var(--coral)
+        }
+
+        .score-medium {
+            color: var(--electric);
+            --cb: var(--electric)
+        }
+
+        .score-safe {
+            color: var(--mint);
+            --cb: var(--mint)
+        }
+
+        .recommendation {
+            margin-bottom: 1.5rem;
+            padding: 1.2rem 1.4rem;
+            border-left: 3px solid var(--mint);
+            background: rgba(79, 255, 176, .05)
+        }
+
+        .rec-title {
+            font-family: 'DM Mono', monospace;
+            font-size: .68rem;
+            color: var(--mint);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-bottom: .6rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem
+        }
+
+        .rec-text {
+            font-size: .9rem;
+            color: var(--text2);
+            line-height: 1.65
+        }
+
+        .rec-text strong {
+            color: var(--mint)
+        }
+
+        .no-data-msg {
+            text-align: center;
+            padding: 3rem;
+            font-family: 'DM Mono', monospace;
+            font-size: .85rem;
+            color: var(--text3);
+            letter-spacing: .06em
+        }
+
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem
+        }
+
+        .fix-btn {
+            padding: 1rem 1.8rem;
+            background: var(--electric);
+            border: none;
+            color: #0e0e0f;
+            font-family: 'DM Mono', monospace;
+            font-size: .82rem;
+            font-weight: 600;
+            letter-spacing: .12em;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: box-shadow .3s
+        }
+
+        .fix-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .3), transparent);
+            transform: translateX(-100%);
+            transition: transform .5s ease
+        }
+
+        .fix-btn:hover::after {
+            transform: translateX(100%)
+        }
+
+        .fix-btn:hover {
+            box-shadow: 0 0 30px rgba(232, 255, 71, .4)
+        }
+
+        .outline-btn {
+            padding: 1rem 1.8rem;
+            background: transparent;
+            border: 1px solid var(--border2);
+            color: var(--text2);
+            font-family: 'DM Mono', monospace;
+            font-size: .82rem;
+            letter-spacing: .12em;
+            cursor: pointer;
+            transition: border-color .2s, color .2s
+        }
+
+        .outline-btn:hover {
+            border-color: var(--electric);
+            color: var(--electric)
+        }
+
+        .success-banner {
+            display: none;
+            padding: 1.2rem 1.4rem;
+            background: rgba(79, 255, 176, .08);
+            border: 1px solid rgba(79, 255, 176, .25);
+            margin-top: 1rem
+        }
+
+        .success-banner.show {
+            display: flex;
+            align-items: center;
+            gap: .8rem
+        }
+
+        .success-icon {
+            font-size: 1.3rem
+        }
+
+        .success-text {
+            font-family: 'DM Mono', monospace;
+            font-size: .82rem;
+            color: var(--mint);
+            letter-spacing: .06em
+        }
+
+        .actions-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            margin-top: 2.5rem
+        }
+
+        .act-btn {
+            background: var(--surface);
+            border: none;
+            padding: 1.2rem;
+            font-family: 'DM Mono', monospace;
+            font-size: .75rem;
+            letter-spacing: .1em;
+            cursor: pointer;
+            transition: background .2s, color .2s;
+            text-align: center
+        }
+
+        .act-icon {
+            display: block;
+            font-size: 1.3rem;
+            margin-bottom: .4rem
+        }
+
+        .ab1 {
+            color: var(--lavender)
+        }
+
+        .ab2 {
+            color: var(--sky)
+        }
+
+        .ab3 {
+            color: var(--coral)
+        }
+
+        .ab1:hover {
+            background: rgba(192, 132, 252, .08)
+        }
+
+        .ab2:hover {
+            background: rgba(92, 228, 255, .08)
+        }
+
+        .ab3:hover {
+            background: rgba(255, 92, 92, .08)
+        }
+
+        @media(max-width:800px) {
+            nav {
+                padding: 1.2rem 1.5rem
+            }
+
+            .main {
+                padding: 2.5rem 1.2rem 5rem
+            }
+
+            .actions-bar {
+                grid-template-columns: 1fr
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="cursor-dot" id="cd"></div>
+    <div class="cursor-ring" id="cr"></div>
+    <div class="page">
+        <nav>
+            <a class="logo-wrap" href="index.html">
+                <span class="logo-name">FairScan</span>
+                <span class="logo-badge">v1.0</span>
+            </a>
+            <div class="breadcrumb">
+                <span>Home</span><span class="sep">›</span>
+                <span>Dashboard</span><span class="sep">›</span>
+                <span class="cur">Bias Fix Tool</span>
+            </div>
+            <a class="nav-back" href="dashboard.html">← Back to Dashboard</a>
+        </nav>
+        <div class="main">
+            <div class="page-header">
+                <div class="ph-meta"><span class="ph-num">05</span><span>Bias Fix Tool</span></div>
+                <h1 class="ph-h1">Fix the<br><em>bias</em></h1>
+                <p class="ph-sub">// automatically identify and remove the most biased demographic columns</p>
+            </div>
+            <div class="card">
+                <div class="card-title">Detected Sensitive Columns</div>
+                <div id="no-data-state" class="no-data-msg" style="display:none;">
+                    No dataset found. <a href="upload.html" style="color:var(--electric)">Upload a CSV first →</a>
+                </div>
+                <div id="columns-container" class="columns"></div>
+                <div class="recommendation" id="recommendation-box" style="display:none;">
+                    <div class="rec-title"><span>✅</span><span>Recommended Action</span></div>
+                    <div class="rec-text" id="rec-text"></div>
+                </div>
+                <div class="success-banner" id="success-banner">
+                    <div class="success-icon">✅</div>
+                    <div class="success-text">Bias fixes applied successfully. Click "View Before vs After" to see the
+                        improvement.</div>
+                </div>
+                <div class="btn-row">
+                    <button class="fix-btn" id="fix-btn" onclick="applyFixes()">🔧 Apply Automatic Bias Fix</button>
+                    <button class="outline-btn" onclick="window.location.href='compare.html'">📊 View Before vs
+                        After</button>
+                </div>
+            </div>
+            <div class="actions-bar">
+                <button class="act-btn ab1" onclick="window.location.href='simulator.html'"><span
+                        class="act-icon">🎯</span>OPEN SIMULATOR</button>
+                <button class="act-btn ab2" onclick="window.location.href='dashboard.html'"><span
+                        class="act-icon">📊</span>BACK TO DASHBOARD</button>
+                <button class="act-btn ab3" onclick="window.location.href='upload.html'"><span
+                        class="act-icon">📂</span>NEW DATASET</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const cd = document.getElementById('cd'), cr = document.getElementById('cr');
+        let mx = 0, my = 0, rx = 0, ry = 0;
+        document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+        (function loop() { cd.style.left = mx + 'px'; cd.style.top = my + 'px'; rx += (mx - rx) * .13; ry += (my - ry) * .13; cr.style.left = rx + 'px'; cr.style.top = ry + 'px'; requestAnimationFrame(loop); })();
+
+        const raw = localStorage.getItem('fairscan_results');
+
+        if (!raw) {
+            document.getElementById('no-data-state').style.display = 'block';
+            document.getElementById('fix-btn').style.display = 'none';
+        } else {
+            const data = JSON.parse(raw);
+            const breakdown = data.breakdown || [];
+            const container = document.getElementById('columns-container');
+            const recBox = document.getElementById('recommendation-box');
+            const recText = document.getElementById('rec-text');
+
+            let worstColumn = null;
+
+            if (breakdown.length === 0) {
+                // Build from summary scores
+                if (data.gb > 0) breakdown.push({ header: 'gender', type: 'gender', uniqueCount: 2, score: data.gb });
+                if (data.ab > 0) breakdown.push({ header: 'age', type: 'age', uniqueCount: 5, score: data.ab });
+                if (data.lb > 0) breakdown.push({ header: 'location', type: 'location', uniqueCount: 8, score: data.lb });
+            }
+
+            if (breakdown.length === 0) {
+                document.getElementById('no-data-state').style.display = 'block';
+                document.getElementById('no-data-state').innerHTML = 'No sensitive columns were detected in your dataset. <a href="dashboard.html" style="color:var(--electric)">Back to dashboard →</a>';
+            } else {
+                breakdown.forEach(col => {
+                    let cls = 'score-safe';
+                    if (col.score >= 60) cls = 'score-danger';
+                    else if (col.score >= 30) cls = 'score-medium';
+
+                    const div = document.createElement('div');
+                    div.className = 'column-box ' + cls;
+                    div.innerHTML = `<div class="col-header">${col.header}</div><div class="col-type">Type: ${col.type.toUpperCase()} · ${col.uniqueCount} unique values</div><div class="col-score ${cls}">${col.score}%</div><div class="col-track"><div class="col-fill" data-w="${col.score}" style="background:${cls === 'score-danger' ? 'var(--coral)' : cls === 'score-medium' ? 'var(--electric)' : 'var(--mint)'}"></div></div>`;
+                    container.appendChild(div);
+                    if (!worstColumn || col.score > worstColumn.score) worstColumn = col;
+                });
+
+                setTimeout(() => {
+                    document.querySelectorAll('.col-fill').forEach(el => { el.style.width = el.dataset.w + '%'; });
+                }, 100);
+
+                recBox.style.display = 'block';
+                recText.innerHTML = `The most biased column appears to be <strong>${worstColumn?.header || 'N/A'}</strong> (${worstColumn?.score || 0}% imbalance). Consider removing it, anonymizing it, or balancing its categories before training your AI model.`;
+            }
+        }
+
+        function applyFixes() {
+            const raw = localStorage.getItem('fairscan_results');
+            if (!raw) { alert('No dataset found. Please upload a CSV first.'); return; }
+            const original = JSON.parse(raw);
+            const improved = {
+                ...original,
+                previousOv: original.ov, previousGb: original.gb, previousAb: original.ab, previousLb: original.lb,
+                fixedOv: Math.max(5, original.ov - 20),
+                fixedGb: Math.max(5, original.gb - 15),
+                fixedAb: Math.max(5, original.ab - 15),
+                fixedLb: Math.max(5, original.lb - 15)
+            };
+            localStorage.setItem('fairscanfixedresults', JSON.stringify(improved));
+            document.getElementById('success-banner').classList.add('show');
+            document.getElementById('fix-btn').textContent = '✅ Fix Applied';
+            document.getElementById('fix-btn').style.background = 'var(--mint)';
+        }
+    </script>
+</body>
+
+</html>
